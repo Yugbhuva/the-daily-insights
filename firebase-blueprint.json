@@ -1,0 +1,113 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and settings",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string", "format": "uri" },
+        "role": { "type": "string", "enum": ["admin", "user"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "bookmarks": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["uid", "email", "role", "createdAt"]
+    },
+    "Article": {
+      "title": "Article",
+      "description": "News article content",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "excerpt": { "type": "string" },
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "category": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "imageUrl": { "type": "string", "format": "uri" },
+        "status": { "type": "string", "enum": ["published", "draft"] },
+        "views": { "type": "number" },
+        "likesCount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "content", "authorId", "category", "status", "createdAt"]
+    },
+    "Comment": {
+      "title": "Comment",
+      "description": "User comment on an article",
+      "type": "object",
+      "properties": {
+        "articleId": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userPhoto": { "type": "string", "format": "uri" },
+        "content": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["articleId", "userId", "content", "createdAt"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "News category",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "slug": { "type": "string" },
+        "description": { "type": "string" }
+      },
+      "required": ["name", "slug"]
+    },
+    "Like": {
+      "title": "Like",
+      "description": "User like on an article",
+      "type": "object",
+      "properties": {
+        "articleId": { "type": "string" },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["articleId", "userId", "createdAt"]
+    },
+    "Ad": {
+      "title": "Ad",
+      "description": "Ad block configuration",
+      "type": "object",
+      "properties": {
+        "code": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["code", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "users": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "articles": {
+      "schema": "Article",
+      "description": "News articles"
+    },
+    "comments": {
+      "schema": "Comment",
+      "description": "Article comments"
+    },
+    "categories": {
+      "schema": "Category",
+      "description": "News categories"
+    },
+    "likes": {
+      "schema": "Like",
+      "description": "Article likes"
+    },
+    "ads": {
+      "schema": "Ad",
+      "description": "Ad blocks"
+    }
+  }
+}

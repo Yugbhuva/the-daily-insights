@@ -1,0 +1,150 @@
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { User } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase';
+import { UserProfile } from '../types';
+
+interface AuthContextType {
+  user: User | null;
+  profile: UserProfile | null;
+  bookmarks: string[];
+  loading: boolean;
+  isAdmin: boolean;
+  refreshBookmarks: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  profile: null,
+  bookmarks: [],
+  loading: true,
+  isAdmin: false,
+  refreshBookmarks: async () => {},
+});
+
+export const useAuth = () => useContext(AuthContext);
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [bookmarks, setBookmarks] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchBookmarks = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('bookmarks')
+      .select('article_id')
+      .eq('user_id', userId);
+    
+    if (!error && data) {
+      setBookmarks(data.map(b => b.article_id));
+    }
+  };
+
+  useEffect(() => {
+    // Check active sessions and sets the user
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchProfile(session.user.id);
+        fetchBookmarks(session.user.id);
+      } else {
+        setLoading(false);
+      }
+    });
+
+    // Listen for changes on auth state (logged in, signed out, etc.)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      
+      if (currentUser) {
+        await fetchProfile(currentUser.id);
+        await fetchBookmarks(currentUser.id);
+      } else {
+        setProfile(null);
+        setBookmarks([]);
+        setLoading(false);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const refreshBookmarks = async () => {
+    if (user) {
+      await fetchBookmarks(user.id);
+    }
+  };
+
+  const fetchProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error && error.code === 'PGRST116') {
+        // Profile doesn't exist, create it
+        const { data: userData } = await supabase.auth.getUser();
+        const user = userData.user;
+        
+        if (user) {
+          const newProfile = {
+            id: user.id,
+            email: user.email || '',
+            name: user.user_metadata.full_name || 'Anonymous',
+            avatar_url: user.user_metadata.avatar_url || '',
+            role: user.email === 'ybhuva817@gmail.com' ? 'admin' : 'user',
+          };
+
+          const { data: createdProfile, error: createError } = await supabase
+            .from('profiles')
+            .insert([newProfile])
+            .select()
+            .single();
+
+          if (createError) throw createError;
+          setProfile(createdProfile);
+        }
+      } else if (error) {
+        throw error;
+      } else {
+        // Auto-promote default admin
+        if (user?.email === 'ybhuva817@gmail.com' && data.role !== 'admin') {
+          const { data: updatedProfile, error: updateError } = await supabase
+            .from('profiles')
+            .update({ role: 'admin' })
+            .eq('id', userId)
+            .select()
+            .single();
+          
+          if (!updateError) {
+            setProfile(updatedProfile);
+          } else {
+            setProfile(data);
+          }
+        } else {
+          setProfile(data);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const value = {
+    user,
+    profile,
+    bookmarks,
+    loading,
+    isAdmin: profile?.role === 'admin' || (user?.email === 'ybhuva817@gmail.com'),
+    refreshBookmarks,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};

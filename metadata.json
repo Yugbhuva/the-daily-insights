@@ -1,0 +1,7 @@
+{
+  "name": "The Daily Insights",
+  "description": "A modern, professional news and blog platform with real-time updates, user engagement, and a robust admin dashboard.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
