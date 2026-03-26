@@ -17,6 +17,7 @@ import CategoryPage from './pages/CategoryPage';
 import Bookmarks from './pages/Bookmarks';
 
 function App() {
+  console.log('App component rendering...');
   return (
     <AuthProvider>
       <Router>

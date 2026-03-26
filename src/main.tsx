@@ -5,6 +5,8 @@ import App from './App.tsx';
 import ErrorBoundary from './components/ErrorBoundary';
 import './index.css';
 
+console.log('App starting...');
+
 // Initialize googletag and adsbygoogle globally for ad scripts
 (window as any).googletag = (window as any).googletag || { cmd: [] };
 (window as any).adsbygoogle = (window as any).adsbygoogle || [];

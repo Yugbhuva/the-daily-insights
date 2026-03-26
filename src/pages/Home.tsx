@@ -48,6 +48,7 @@ const MOCK_ARTICLES: Partial<Article>[] = [
 ];
 
 export default function Home() {
+  console.log('Home component rendering...');
   const { profile } = useAuth();
   const [featuredArticle, setFeaturedArticle] = useState<Article | null>(null);
   const [latestArticles, setLatestArticles] = useState<Article[]>([]);
