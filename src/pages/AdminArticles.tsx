@@ -11,23 +11,29 @@ export default function AdminArticles() {
   const { isAdmin } = useAuth();
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const fetchArticles = async () => {
-    if (!isAdmin) return;
+    setFetchError(null);
     try {
       const { data, error } = await supabase
         .from('articles')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase fetch error:', error);
+        setFetchError(`Database error: ${error.message} (code: ${error.code})`);
+        return;
+      }
       setArticles(data || []);
-    } catch (error) {
-      console.error('Error fetching admin articles:', error);
+    } catch (err: any) {
+      console.error('Error fetching admin articles:', err);
+      setFetchError(err?.message || 'Unknown error fetching articles.');
     } finally {
       setLoading(false);
     }
@@ -238,7 +244,15 @@ export default function AdminArticles() {
           </table>
         </div>
 
-        {filteredArticles.length === 0 && !loading && (
+        {fetchError && (
+          <div className="p-10 text-center">
+            <p className="text-red-500 font-bold mb-2">⚠️ Failed to load articles</p>
+            <p className="text-zinc-500 dark:text-zinc-400 text-sm font-mono bg-zinc-100 dark:bg-zinc-800 px-4 py-2 rounded-xl inline-block">{fetchError}</p>
+            <p className="text-zinc-400 text-xs mt-4">This is usually caused by a missing Supabase RLS SELECT policy or a paused project. Check the browser console for details.</p>
+            <button onClick={fetchArticles} className="mt-4 px-6 py-2 bg-red-600 text-white text-sm font-bold rounded-xl hover:bg-red-700">Retry</button>
+          </div>
+        )}
+        {!fetchError && filteredArticles.length === 0 && !loading && (
           <div className="p-20 text-center">
             <p className="text-zinc-500 dark:text-zinc-400">No articles found matching your criteria.</p>
           </div>
