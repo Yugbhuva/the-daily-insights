@@ -134,7 +134,7 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
         {/* Recent Articles */}
         <section className="bg-white dark:bg-zinc-900 p-8 rounded-2xl border border-zinc-100 dark:border-zinc-800 shadow-sm">
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-8" style={{color:'white'}}>
             <h2 className="text-xl font-black flex items-center gap-2">
               <Newspaper className="text-red-600" /> Recent Articles
             </h2>
@@ -161,7 +161,7 @@ export default function AdminDashboard() {
 
         {/* Recent Comments */}
         <section className="bg-white dark:bg-zinc-900 p-8 rounded-2xl border border-zinc-100 dark:border-zinc-800 shadow-sm">
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-8" style={{color:'white'}}>
             <h2 className="text-xl font-black flex items-center gap-2">
               <MessageSquare className="text-red-600" /> Recent Comments
             </h2>
