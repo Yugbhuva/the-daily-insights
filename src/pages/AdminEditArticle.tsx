@@ -59,6 +59,10 @@ export default function AdminEditArticle() {
   }, [id]);
 
   const handleSaveArticle = async (targetStatus: 'draft' | 'published') => {
+    console.log('handleSaveArticle called with status:', targetStatus);
+    console.log('Current user:', user);
+    console.log('Current profile:', profile);
+
     if (!user) {
       alert('You must be logged in to save articles.');
       return;
@@ -70,6 +74,7 @@ export default function AdminEditArticle() {
     }
 
     setSaving(true);
+    console.log('Saving started, formData:', formData);
 
     const articleData = {
       ...formData,
@@ -79,18 +84,25 @@ export default function AdminEditArticle() {
       updated_at: new Date().toISOString(),
     };
 
+    console.log('Article data to save:', articleData);
+
     try {
       if (id) {
-        const { error } = await supabase
-          .from('articles')
-          .update(articleData)
-          .eq('id', id);
-        if (error) throw error;
+        console.log('Updating existing article with id:', id);
+        const result = await Promise.race([
+          supabase.from('articles').update(articleData).eq('id', id),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Update timeout')), 30000))
+        ]) as any;
+        if (result.error) throw result.error;
+        console.log('Update successful');
       } else {
-        const { error } = await supabase
-          .from('articles')
-          .insert([{ ...articleData, created_at: new Date().toISOString() }]);
-        if (error) throw error;
+        console.log('Inserting new article');
+        const result = await Promise.race([
+          supabase.from('articles').insert([{ ...articleData, created_at: new Date().toISOString() }]),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Insert timeout')), 30000))
+        ]) as any;
+        if (result.error) throw result.error;
+        console.log('Insert successful');
       }
 
       alert(`Article saved as ${targetStatus}.`);
@@ -99,6 +111,7 @@ export default function AdminEditArticle() {
       console.error('Error saving article:', error);
       alert(error?.message || 'Failed to save article. Please check console for details.');
     } finally {
+      console.log('Saving finished, setting saving to false');
       setSaving(false);
     }
   };
