@@ -58,7 +58,12 @@ export default function AdminEditArticle() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+
+    if (!user) {
+      alert('You must be logged in to save articles.');
+      return;
+    }
+
     setSaving(true);
 
     const articleData = {
@@ -82,8 +87,9 @@ export default function AdminEditArticle() {
         if (error) throw error;
       }
       navigate('/admin/articles');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving article:', error);
+      alert(error?.message || 'Failed to save article. Please check console for details.');
     } finally {
       setSaving(false);
     }

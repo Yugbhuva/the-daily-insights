@@ -168,11 +168,6 @@ export default function Home() {
         <div className="flex items-center gap-2 font-black uppercase text-xs tracking-widest whitespace-nowrap bg-white/20 px-3 py-1 rounded-lg">
           <Zap size={14} className="fill-current" /> Breaking News
         </div>
-        <div className="flex-1 overflow-hidden">
-          <div className="animate-marquee whitespace-nowrap font-bold text-sm">
-            {featuredArticle?.title} • {latestArticles[0]?.title} • {latestArticles[1]?.title}
-          </div>
-        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -217,8 +212,8 @@ export default function Home() {
           {/* Latest News Grid */}
           <section>
             <div className="flex items-center justify-between mb-8">
-              <h2 className="text-3xl font-black tracking-tight flex items-center gap-3">
-                <Newspaper className="text-red-600" /> Latest Headlines
+              <h2 className="text-3xl font-black tracking-tight flex items-center gap-3"  style={{ color:'white' }} >
+                <Newspaper className="text-red-600"/> Latest Headlines
               </h2>
               <div className="h-px flex-1 bg-zinc-100 dark:bg-zinc-800 mx-6"></div>
               <button className="text-sm font-black text-red-600 hover:underline flex items-center gap-1">
@@ -236,7 +231,7 @@ export default function Home() {
 
           {/* Category Sections (Example: Technology) */}
           <section className="bg-zinc-50 dark:bg-zinc-900/50 p-8 rounded-3xl border border-zinc-100 dark:border-zinc-800">
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center justify-between mb-8"  style={{ color:'white' }} >
               <h2 className="text-2xl font-black tracking-tight">Technology</h2>
               <Link to="/category/technology" className="text-xs font-black uppercase tracking-widest text-zinc-400 hover:text-red-600 transition-colors">
                 Explore More
@@ -254,7 +249,7 @@ export default function Home() {
         <aside className="lg:col-span-4 space-y-12">
           {/* Trending Now */}
           <section className="bg-white dark:bg-zinc-900 p-8 rounded-3xl border border-zinc-100 dark:border-zinc-800 shadow-sm">
-            <h2 className="text-xl font-black mb-8 flex items-center gap-2">
+            <h2 className="text-xl font-black mb-8 flex items-center gap-2"  style={{ color:'white' }} >
               <TrendingUp className="text-red-600" /> Trending Now
             </h2>
             <div className="space-y-8">
