@@ -31,7 +31,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
       <aside className="w-full lg:w-64 bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 p-6 flex flex-col">
         <div className="mb-10">
           <Link to="/" className="text-xl font-black tracking-tighter text-zinc-900 dark:text-white">
-            THE DAILY INSIGHTS<span className="text-red-600">.</span> <span className="text-xs font-normal text-zinc-400">ADMIN</span>
+            THE DAILY INSIGHTS<span className="text-red-600">.</span>
           </Link>
         </div>
 
