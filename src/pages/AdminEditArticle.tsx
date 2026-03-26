@@ -89,19 +89,24 @@ export default function AdminEditArticle() {
     try {
       if (id) {
         console.log('Updating existing article with id:', id);
-        const result = await Promise.race([
-          supabase.from('articles').update(articleData).eq('id', id),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Update timeout')), 30000))
-        ]) as any;
-        if (result.error) throw result.error;
+        const { error } = await supabase
+          .from('articles')
+          .update(articleData)
+          .eq('id', id);
+        if (error) {
+          console.error('Supabase update error:', error);
+          throw new Error(error.message || JSON.stringify(error));
+        }
         console.log('Update successful');
       } else {
         console.log('Inserting new article');
-        const result = await Promise.race([
-          supabase.from('articles').insert([{ ...articleData, created_at: new Date().toISOString() }]),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Insert timeout')), 30000))
-        ]) as any;
-        if (result.error) throw result.error;
+        const { error } = await supabase
+          .from('articles')
+          .insert([{ ...articleData, created_at: new Date().toISOString() }]);
+        if (error) {
+          console.error('Supabase insert error:', error);
+          throw new Error(error.message || JSON.stringify(error));
+        }
         console.log('Insert successful');
       }
 
@@ -109,7 +114,7 @@ export default function AdminEditArticle() {
       navigate('/admin/articles');
     } catch (error: any) {
       console.error('Error saving article:', error);
-      alert(error?.message || 'Failed to save article. Please check console for details.');
+      alert(`Failed to save article: ${error?.message || 'Unknown error. Check the browser console for details.'}`);
     } finally {
       console.log('Saving finished, setting saving to false');
       setSaving(false);
