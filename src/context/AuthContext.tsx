@@ -24,6 +24,7 @@ const AuthContext = createContext<AuthContextType>({
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const ADMIN_EMAIL = 'ybhuva817@gmail.com';
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [bookmarks, setBookmarks] = useState<string[]>([]);
@@ -43,10 +44,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Check active sessions and sets the user
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-        fetchBookmarks(session.user.id);
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      if (currentUser) {
+        fetchProfile(currentUser.id, currentUser.email || undefined);
+        fetchBookmarks(currentUser.id);
       } else {
         setLoading(false);
       }
@@ -58,7 +60,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(currentUser);
       
       if (currentUser) {
-        await fetchProfile(currentUser.id);
+        await fetchProfile(currentUser.id, currentUser.email || undefined);
         await fetchBookmarks(currentUser.id);
       } else {
         setProfile(null);
@@ -67,8 +69,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     });
 
+    const loadingTimeout = setTimeout(() => {
+      console.warn('Auth loading timeout reached, continuing without auth');
+      setLoading(false);
+    }, 8000);
+
     return () => {
       subscription.unsubscribe();
+      clearTimeout(loadingTimeout);
     };
   }, []);
 
@@ -78,7 +86,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = async (userId: string, userEmail?: string) => {
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -86,41 +94,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('id', userId)
         .single();
 
-      if (error && error.code === 'PGRST116') {
+      if (error && (error.code === 'PGRST116' || error.details?.includes('No rows found'))) {
         // Profile doesn't exist, create it
         const { data: userData } = await supabase.auth.getUser();
-        const user = userData.user;
-        
-        if (user) {
-          const newProfile = {
-            id: user.id,
-            email: user.email || '',
-            name: user.user_metadata.full_name || 'Anonymous',
-            avatar_url: user.user_metadata.avatar_url || '',
-            role: user.email === 'ybhuva817@gmail.com' ? 'admin' : 'user',
-          };
+        const signedInUser = userData.user;
 
-          const { data: createdProfile, error: createError } = await supabase
-            .from('profiles')
-            .insert([newProfile])
-            .select()
-            .single();
+        const newProfile = {
+          id: userId,
+          email: signedInUser?.email || userEmail || '',
+          name: signedInUser?.user_metadata?.full_name || 'Anonymous',
+          avatar_url: signedInUser?.user_metadata?.avatar_url || '',
+          role: (signedInUser?.email || userEmail) === ADMIN_EMAIL ? 'admin' : 'user',
+        };
 
-          if (createError) throw createError;
-          setProfile(createdProfile);
-        }
+        const { data: createdProfile, error: createError } = await supabase
+          .from('profiles')
+          .insert([newProfile])
+          .select()
+          .single();
+
+        if (createError) throw createError;
+        setProfile(createdProfile);
       } else if (error) {
         throw error;
       } else {
-        // Auto-promote default admin
-        if (user?.email === 'ybhuva817@gmail.com' && data.role !== 'admin') {
+        if ((userEmail || user?.email) === ADMIN_EMAIL && data.role !== 'admin') {
           const { data: updatedProfile, error: updateError } = await supabase
             .from('profiles')
             .update({ role: 'admin' })
             .eq('id', userId)
             .select()
             .single();
-          
+
           if (!updateError) {
             setProfile(updatedProfile);
           } else {
@@ -142,7 +147,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     profile,
     bookmarks,
     loading,
-    isAdmin: profile?.role === 'admin' || (user?.email === 'ybhuva817@gmail.com'),
+    isAdmin: profile?.role === 'admin' || (user?.email === ADMIN_EMAIL),
     refreshBookmarks,
   };
 
