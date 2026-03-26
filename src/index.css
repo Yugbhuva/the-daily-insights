@@ -14,6 +14,16 @@
   100% { transform: translateX(-50%); }
 }
 
+body {
+  color: #000;
+  background-color: #fff;
+}
+
+.dark body {
+  color: #f8fafc; /* Tailwind zinc-50 equivalent */
+  background-color: #020617;
+}
+
 .animate-marquee {
   display: inline-block;
   animation: marquee 30s linear infinite;
