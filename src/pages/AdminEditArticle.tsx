@@ -147,12 +147,27 @@ export default function AdminEditArticle() {
 
     console.log('Uploading file', { fileName, filePath, fileSize: file.size });
 
-    const { error: uploadError } = await supabase.storage
+    // 20 second timeout — fail clearly instead of hanging forever
+    const uploadPromise = supabase.storage
       .from('articles')
       .upload(filePath, file);
 
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(
+        'Upload timed out. Please check: (1) the "articles" storage bucket exists in Supabase and is public, (2) you are signed in.'
+      )), 20000)
+    );
+
+    const { error: uploadError } = await Promise.race([uploadPromise, timeoutPromise]) as any;
+
     if (uploadError) {
       console.error('Supabase storage uploadError', uploadError);
+      if (uploadError.message?.includes('Bucket not found') || uploadError.statusCode === '404') {
+        throw new Error('Storage bucket "articles" not found. Please create it in Supabase Dashboard → Storage.');
+      }
+      if (uploadError.statusCode === '403' || uploadError.message?.includes('policy')) {
+        throw new Error('Upload blocked by storage policy. Please sign out, sign back in, and try again.');
+      }
       throw uploadError;
     }
 
@@ -161,9 +176,7 @@ export default function AdminEditArticle() {
       .getPublicUrl(filePath);
 
     if (!data?.publicUrl) {
-      const message = 'Could not generate public URL after upload';
-      console.error(message, { filePath, data });
-      throw new Error(message);
+      throw new Error('Could not generate public URL after upload');
     }
 
     return data.publicUrl;
@@ -192,11 +205,18 @@ export default function AdminEditArticle() {
 
       const compressedFile = await imageCompression(file, options);
       setUploadProgress(40);
-      setUploadProgress(60);
+
+      // Smooth progress animation while upload happens
+      let progress = 40;
+      const ticker = setInterval(() => {
+        progress = Math.min(progress + 2, 85);
+        setUploadProgress(progress);
+      }, 300);
 
       const url = await uploadFile(compressedFile, 'featured');
+      clearInterval(ticker);
       if (!isImageUploadCancelled) {
-        setUploadProgress(90);
+        setUploadProgress(95);
         setFormData({ ...formData, image_url: url });
         setUploadProgress(100);
       }
