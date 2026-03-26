@@ -370,21 +370,23 @@ export default function ArticleDetail() {
           rehypePlugins={[rehypeRaw]}
           components={MarkdownComponents}
         >
-          {renderContentWithAds(article.content)}
+          {renderContentWithAds(article.content || '')}
         </ReactMarkdown>
       </div>
 
-      <div className="flex flex-wrap gap-2 mb-16">
-        {article.tags.map(tag => (
-          <Link 
-            key={tag} 
-            to={`/search?q=${tag}`}
-            className="px-4 py-2 bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 rounded-xl text-sm font-medium hover:bg-zinc-200 dark:hover:bg-zinc-800"
-          >
-            #{tag}
-          </Link>
-        ))}
-      </div>
+      {(article.tags ?? []).length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-16">
+          {(article.tags ?? []).map(tag => (
+            <Link 
+              key={tag} 
+              to={`/search?q=${tag}`}
+              className="px-4 py-2 bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 rounded-xl text-sm font-medium hover:bg-zinc-200 dark:hover:bg-zinc-800"
+            >
+              #{tag}
+            </Link>
+          ))}
+        </div>
+      )}
 
       {/* Related Articles */}
       <section className="mb-16">
