@@ -58,11 +58,14 @@ export default function AdminEditArticle() {
     }
   }, [id]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const handleSaveArticle = async (targetStatus: 'draft' | 'published') => {
     if (!user) {
       alert('You must be logged in to save articles.');
+      return;
+    }
+
+    if (!formData.title?.trim() || !formData.content?.trim() || !formData.excerpt?.trim()) {
+      alert('Title, excerpt, and content are required to save an article.');
       return;
     }
 
@@ -70,6 +73,7 @@ export default function AdminEditArticle() {
 
     const articleData = {
       ...formData,
+      status: targetStatus,
       author_id: user.id,
       author_name: profile?.name || 'Admin',
       updated_at: new Date().toISOString(),
@@ -88,6 +92,8 @@ export default function AdminEditArticle() {
           .insert([{ ...articleData, created_at: new Date().toISOString() }]);
         if (error) throw error;
       }
+
+      alert(`Article saved as ${targetStatus}.`);
       navigate('/admin/articles');
     } catch (error: any) {
       console.error('Error saving article:', error);
@@ -95,6 +101,11 @@ export default function AdminEditArticle() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await handleSaveArticle(formData.status === 'published' ? 'published' : 'draft');
   };
 
   const addTag = (e: React.KeyboardEvent) => {
@@ -415,20 +426,32 @@ export default function AdminEditArticle() {
                 </select>
               </div>
 
-              <div className="pt-6 border-t border-zinc-100 dark:border-zinc-800 flex gap-3">
-                <button 
-                  type="submit"
-                  disabled={saving}
-                  className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-red-600 text-white font-black rounded-xl hover:bg-red-700 disabled:opacity-50 shadow-lg shadow-red-600/20"
-                >
-                  {saving ? 'Saving...' : <><Save size={20} /> Save Article</>}
-                </button>
+              <div className="pt-6 border-t border-zinc-100 dark:border-zinc-800 space-y-3">
+                <div className="flex gap-3">
+                  <button 
+                    type="button"
+                    onClick={() => handleSaveArticle('draft')}
+                    disabled={saving}
+                    className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-zinc-200 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-100 font-black rounded-xl hover:bg-zinc-300 dark:hover:bg-zinc-600 disabled:opacity-50"
+                  >
+                    {saving ? 'Saving...' : 'Save Draft'}
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => handleSaveArticle('published')}
+                    disabled={saving}
+                    className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-red-600 text-white font-black rounded-xl hover:bg-red-700 disabled:opacity-50"
+                  >
+                    {saving ? 'Saving...' : 'Publish'}
+                  </button>
+                </div>
+
                 <button 
                   type="button"
                   onClick={() => navigate('/admin/articles')}
-                  className="p-3 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                  className="w-full flex items-center justify-center px-6 py-3 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-700"
                 >
-                  <X size={20} />
+                  <X size={20} /> Cancel
                 </button>
               </div>
             </div>
