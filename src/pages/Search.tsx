@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Article } from '../types';
 import NewsCard from '../components/NewsCard';
@@ -7,6 +7,7 @@ import { Search as SearchIcon, Filter, SlidersHorizontal } from 'lucide-react';
 import SEO from '../components/SEO';
 
 export default function Search() {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const queryParam = searchParams.get('q') || '';
   const [articles, setArticles] = useState<Article[]>([]);
@@ -68,7 +69,7 @@ export default function Search() {
                 placeholder="Search for news, topics, or keywords..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && (window.location.href = `/search?q=${searchTerm}`)}
+                onKeyDown={(e) => e.key === 'Enter' && navigate(`/search?q=${encodeURIComponent(searchTerm)}`)}
                 className="w-full pl-12 pr-4 py-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-lg focus:ring-2 focus:ring-red-600 outline-none shadow-sm"
               />
             </div>
