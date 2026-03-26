@@ -108,15 +108,26 @@ export default function AdminEditArticle() {
     const fileName = `${Math.random()}.${fileExt}`;
     const filePath = `${path}/${fileName}`;
 
+    console.log('Uploading file', { fileName, filePath, fileSize: file.size });
+
     const { error: uploadError } = await supabase.storage
       .from('articles')
       .upload(filePath, file);
 
-    if (uploadError) throw uploadError;
+    if (uploadError) {
+      console.error('Supabase storage uploadError', uploadError);
+      throw uploadError;
+    }
 
     const { data } = supabase.storage
       .from('articles')
       .getPublicUrl(filePath);
+
+    if (!data?.publicUrl) {
+      const message = 'Could not generate public URL after upload';
+      console.error(message, { filePath, data });
+      throw new Error(message);
+    }
 
     return data.publicUrl;
   };
@@ -139,16 +150,20 @@ export default function AdminEditArticle() {
         maxWidthOrHeight: 1920,
         useWebWorker: true
       };
-      
+
       const compressedFile = await imageCompression(file, options);
       setUploadProgress(40);
-      
+      setUploadProgress(60);
+
       const url = await uploadFile(compressedFile, 'featured');
-      setUploadProgress(100);
+      setUploadProgress(90);
       setFormData({ ...formData, image_url: url });
-    } catch (error) {
-      console.error("Upload error:", error);
-      alert("Failed to upload image.");
+      setUploadProgress(100);
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      setUploadProgress(0);
+      const message = error?.message || 'Failed to upload image.';
+      alert(message);
     } finally {
       setUploading(false);
     }
@@ -176,15 +191,16 @@ export default function AdminEditArticle() {
         maxWidthOrHeight: 1280,
         useWebWorker: true
       };
-      
+
       const compressedFile = await imageCompression(file, options);
       setContentUploadProgress(40);
-      
+      setContentUploadProgress(60);
+
       const url = await uploadFile(compressedFile, 'content');
-      setContentUploadProgress(100);
-      
+      setContentUploadProgress(90);
+
       const markdownImage = `\n![${file.name}](${url})\n`;
-      
+
       if (contentRef.current) {
         const textarea = contentRef.current;
         const start = textarea.selectionStart;
@@ -192,10 +208,10 @@ export default function AdminEditArticle() {
         const text = textarea.value;
         const before = text.substring(0, start);
         const after = text.substring(end);
-        
+
         const newContent = before + markdownImage + after;
         setFormData({ ...formData, content: newContent });
-        
+
         setTimeout(() => {
           textarea.focus();
           textarea.setSelectionRange(start + markdownImage.length, start + markdownImage.length);
@@ -203,9 +219,13 @@ export default function AdminEditArticle() {
       } else {
         setFormData({ ...formData, content: (formData.content || '') + markdownImage });
       }
-    } catch (error) {
-      console.error("Content upload error:", error);
-      alert("Failed to upload image.");
+
+      setContentUploadProgress(100);
+    } catch (error: any) {
+      console.error('Content upload error:', error);
+      setContentUploadProgress(0);
+      const message = error?.message || 'Failed to upload image.';
+      alert(message);
     } finally {
       setContentUploading(false);
     }
