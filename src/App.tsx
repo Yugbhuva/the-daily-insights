@@ -15,25 +15,43 @@ import Profile from './pages/Profile';
 import Search from './pages/Search';
 import CategoryPage from './pages/CategoryPage';
 import Bookmarks from './pages/Bookmarks';
+import { useEffect, useState } from 'react';
 
 function App() {
-  console.log('App component rendering...');
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('darkMode');
+      if (saved !== null) return JSON.parse(saved);
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
+  }, [isDarkMode]);
+
   return (
     <AuthProvider>
       <Router>
-        <AppContent />
+        <AppContent isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} />
       </Router>
     </AuthProvider>
   );
 }
 
-function AppContent() {
+function AppContent({ isDarkMode, setIsDarkMode }: { isDarkMode: boolean; setIsDarkMode: (val: boolean) => void }) {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin');
 
   return (
     <div className="min-h-screen flex flex-col bg-zinc-50 dark:bg-zinc-950 transition-colors duration-200">
-      {!isAdminRoute && <Navbar />}
+      {!isAdminRoute && <Navbar isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} />}
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<Home />} />
