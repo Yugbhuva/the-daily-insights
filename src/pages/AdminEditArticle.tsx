@@ -31,6 +31,8 @@ export default function AdminEditArticle() {
   const [contentUploading, setContentUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [contentUploadProgress, setContentUploadProgress] = useState(0);
+  const [isImageUploadCancelled, setIsImageUploadCancelled] = useState(false);
+  const [isContentUploadCancelled, setIsContentUploadCancelled] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const contentRef = useRef<HTMLTextAreaElement>(null);
 
@@ -148,9 +150,11 @@ export default function AdminEditArticle() {
 
     if (!file || !user) return;
 
+    setIsImageUploadCancelled(false);
     setUploading(true);
     setUploadProgress(10);
     try {
+      if (isImageUploadCancelled) throw new Error('Image upload cancelled');
       const options = {
         maxSizeMB: 1,
         maxWidthOrHeight: 1920,
@@ -162,17 +166,32 @@ export default function AdminEditArticle() {
       setUploadProgress(60);
 
       const url = await uploadFile(compressedFile, 'featured');
-      setUploadProgress(90);
-      setFormData({ ...formData, image_url: url });
-      setUploadProgress(100);
+      if (!isImageUploadCancelled) {
+        setUploadProgress(90);
+        setFormData({ ...formData, image_url: url });
+        setUploadProgress(100);
+      }
     } catch (error: any) {
+      if (error?.message === 'Image upload cancelled') {
+        return;
+      }
       console.error('Upload error:', error);
       setUploadProgress(0);
       const message = error?.message || 'Failed to upload image.';
       alert(message);
     } finally {
-      setUploading(false);
+      if (!isImageUploadCancelled) setUploading(false);
+      if (isImageUploadCancelled) {
+        setUploading(false);
+        setUploadProgress(0);
+      }
     }
+  };
+
+  const cancelImageUpload = () => {
+    setIsImageUploadCancelled(true);
+    setUploading(false);
+    setUploadProgress(0);
   };
 
   const deleteFeaturedImage = async () => {
@@ -189,9 +208,11 @@ export default function AdminEditArticle() {
 
     if (!file || !user) return;
 
+    setIsContentUploadCancelled(false);
     setContentUploading(true);
     setContentUploadProgress(10);
     try {
+      if (isContentUploadCancelled) throw new Error('Content upload cancelled');
       const options = {
         maxSizeMB: 0.8,
         maxWidthOrHeight: 1280,
@@ -203,38 +224,53 @@ export default function AdminEditArticle() {
       setContentUploadProgress(60);
 
       const url = await uploadFile(compressedFile, 'content');
-      setContentUploadProgress(90);
+      if (!isContentUploadCancelled) {
+        setContentUploadProgress(90);
 
-      const markdownImage = `\n![${file.name}](${url})\n`;
+        const markdownImage = `\n![${file.name}](${url})\n`;
 
-      if (contentRef.current) {
-        const textarea = contentRef.current;
-        const start = textarea.selectionStart;
-        const end = textarea.selectionEnd;
-        const text = textarea.value;
-        const before = text.substring(0, start);
-        const after = text.substring(end);
+        if (contentRef.current) {
+          const textarea = contentRef.current;
+          const start = textarea.selectionStart;
+          const end = textarea.selectionEnd;
+          const text = textarea.value;
+          const before = text.substring(0, start);
+          const after = text.substring(end);
 
-        const newContent = before + markdownImage + after;
-        setFormData({ ...formData, content: newContent });
+          const newContent = before + markdownImage + after;
+          setFormData({ ...formData, content: newContent });
 
-        setTimeout(() => {
-          textarea.focus();
-          textarea.setSelectionRange(start + markdownImage.length, start + markdownImage.length);
-        }, 0);
-      } else {
-        setFormData({ ...formData, content: (formData.content || '') + markdownImage });
+          setTimeout(() => {
+            textarea.focus();
+            textarea.setSelectionRange(start + markdownImage.length, start + markdownImage.length);
+          }, 0);
+        } else {
+          setFormData({ ...formData, content: (formData.content || '') + markdownImage });
+        }
+
+        setContentUploadProgress(100);
       }
-
-      setContentUploadProgress(100);
     } catch (error: any) {
+      if (error?.message === 'Content upload cancelled') {
+        return;
+      }
       console.error('Content upload error:', error);
       setContentUploadProgress(0);
       const message = error?.message || 'Failed to upload image.';
       alert(message);
     } finally {
-      setContentUploading(false);
+      if (!isContentUploadCancelled) setContentUploading(false);
+      if (isContentUploadCancelled) {
+        setContentUploading(false);
+        setContentUploadProgress(0);
+      }
     }
+  };
+
+  const cancelContentUpload = () => {
+    setIsContentUploadCancelled(true);
+    setContentUploading(false);
+    setContentUploadProgress(0);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -287,17 +323,28 @@ export default function AdminEditArticle() {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-xs font-black uppercase tracking-widest text-zinc-400 block">Content (Markdown Supported)</label>
-                  <label className="flex items-center gap-2 px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-lg text-xs font-bold cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
-                    {contentUploading ? (
-                      <div className="flex items-center gap-2">
-                        <Loader2 className="animate-spin" size={14} />
-                        <span>{Math.round(contentUploadProgress)}%</span>
-                      </div>
-                    ) : (
-                      <><Upload size={14} /> <span>Insert Image</span></>
+                  <div className="flex items-center gap-2">
+                    <label className="flex items-center gap-2 px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-lg text-xs font-bold cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
+                      {contentUploading ? (
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="animate-spin" size={14} />
+                          <span>{Math.round(contentUploadProgress)}%</span>
+                        </div>
+                      ) : (
+                        <><Upload size={14} /> <span>Insert Image</span></>
+                      )}
+                      <input type="file" className="hidden" accept="image/*" onChange={handleContentImageUpload} disabled={contentUploading} />
+                    </label>
+                    {contentUploading && (
+                      <button
+                        type="button"
+                        onClick={cancelContentUpload}
+                        className="px-3 py-1.5 bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-lg text-xs font-bold hover:bg-zinc-300 dark:hover:bg-zinc-600"
+                      >
+                        Cancel
+                      </button>
                     )}
-                    <input type="file" className="hidden" accept="image/*" onChange={handleContentImageUpload} disabled={contentUploading} />
-                  </label>
+                  </div>
                 </div>
                 <div 
                   className="relative"
@@ -417,6 +464,15 @@ export default function AdminEditArticle() {
                         ) : <Upload size={16} />}
                         <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} disabled={uploading} />
                       </label>
+                      {uploading && (
+                        <button
+                          type="button"
+                          onClick={cancelImageUpload}
+                          className="px-2 py-1 bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-md text-xs font-bold hover:bg-zinc-300 dark:hover:bg-zinc-600"
+                        >
+                          Cancel
+                        </button>
+                      )}
                     </div>
                     {uploading && (
                       <div className="absolute -bottom-0.5 left-2 right-2 h-0.5 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
