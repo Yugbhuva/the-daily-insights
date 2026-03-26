@@ -67,6 +67,19 @@ export default function AdminArticles() {
     }
   };
 
+  const publishArticle = async (articleId: string) => {
+    try {
+      const { error } = await supabase
+        .from('articles')
+        .update({ status: 'published' })
+        .eq('id', articleId);
+      if (error) throw error;
+      fetchArticles();
+    } catch (error) {
+      console.error('Error publishing article:', error);
+    }
+  };
+
   const toggleStatus = async (article: Article) => {
     const newStatus = article.status === 'published' ? 'draft' : 'published';
     try {
@@ -148,18 +161,15 @@ export default function AdminArticles() {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <button 
-                      onClick={() => toggleStatus(article)}
-                      className={cn(
-                        "flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg transition-colors",
-                        article.status === 'published' 
-                          ? "text-green-600 bg-green-50 dark:bg-green-900/20" 
-                          : "text-zinc-400 bg-zinc-100 dark:bg-zinc-800"
-                      )}
-                    >
+                    <span className={cn(
+                        "inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg",
+                        article.status === 'published'
+                          ? "text-green-600 bg-green-50 dark:bg-green-900/20"
+                          : "text-zinc-500 bg-zinc-100 dark:bg-zinc-800"
+                      )}>
                       {article.status === 'published' ? <CheckCircle size={12} /> : <XCircle size={12} />}
                       {article.status}
-                    </button>
+                    </span>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-1 text-sm font-bold text-zinc-700 dark:text-zinc-300">
@@ -185,6 +195,17 @@ export default function AdminArticles() {
                       >
                         <Edit2 size={18} />
                       </Link>
+
+                      {article.status === 'draft' && (
+                        <button
+                          onClick={() => publishArticle(article.id)}
+                          className="px-3 py-1 text-xs font-black uppercase tracking-widest rounded-lg bg-green-50 text-green-700 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-300 dark:hover:bg-green-900"
+                          title="Publish"
+                        >
+                          Publish
+                        </button>
+                      )}
+
                       {confirmDelete === article.id ? (
                         <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-2 duration-200">
                           <button 

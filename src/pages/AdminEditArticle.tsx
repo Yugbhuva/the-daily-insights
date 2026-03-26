@@ -401,17 +401,19 @@ export default function AdminEditArticle() {
             </h3>
             
             <div className="space-y-6">
-              <div>
-                <label className="text-xs font-black uppercase tracking-widest text-zinc-400 mb-2 block">Status</label>
-                <select 
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                  className="w-full bg-zinc-50 dark:bg-zinc-800 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-red-600 outline-none"
-                >
-                  <option value="draft">Draft</option>
-                  <option value="published">Published</option>
-                </select>
-              </div>
+              {id && (
+                <div>
+                  <label className="text-xs font-black uppercase tracking-widest text-zinc-400 mb-2 block">Status</label>
+                  <select 
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                    className="w-full bg-zinc-50 dark:bg-zinc-800 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-red-600 outline-none"
+                  >
+                    <option value="draft">Draft</option>
+                    <option value="published">Published</option>
+                  </select>
+                </div>
+              )}
 
               <div>
                 <label className="text-xs font-black uppercase tracking-widest text-zinc-400 mb-2 block">Category</label>
