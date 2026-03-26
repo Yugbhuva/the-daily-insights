@@ -528,7 +528,7 @@ export default function AdminEditArticle() {
                   </div>
                   {formData.image_url && (
                     <div className="relative aspect-video rounded-xl overflow-hidden border border-zinc-100 dark:border-zinc-800">
-                      <img src={formData.image_url} alt="Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      <img src={formData.image_url} alt="Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                       <button 
                         type="button"
                         onClick={deleteFeaturedImage}

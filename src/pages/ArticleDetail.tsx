@@ -356,14 +356,17 @@ export default function ArticleDetail() {
         </div>
       </header>
 
-      <div className="aspect-[16/9] rounded-2xl overflow-hidden mb-12">
-        <img 
-          src={article.image_url} 
-          alt={article.title}
-          className="w-full h-full object-cover"
-          referrerPolicy="no-referrer"
-        />
-      </div>
+      {article.image_url && (
+        <div className="aspect-[16/9] rounded-2xl overflow-hidden mb-12">
+          <img 
+            src={article.image_url} 
+            alt={article.title}
+            className="w-full h-full object-cover"
+            referrerPolicy="no-referrer"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+          />
+        </div>
+      )}
 
       <div className="prose prose-lg dark:prose-invert max-w-none mb-16">
         <ReactMarkdown 
