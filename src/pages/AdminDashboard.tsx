@@ -105,10 +105,10 @@ export default function AdminDashboard() {
   }, [isAdmin]);
 
   const statCards = [
-    { label: 'Total Articles', value: stats.totalArticles, icon: Newspaper, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20', trend: '+12%', up: true },
-    { label: 'Total Views', value: stats.totalViews.toLocaleString(), icon: Eye, color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-900/20', trend: '+24%', up: true },
-    { label: 'Total Comments', value: stats.totalComments, icon: MessageSquare, color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-900/20', trend: '-5%', up: false },
-    { label: 'Total Users', value: stats.totalUsers, icon: Users, color: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-900/20', trend: '+8%', up: true },
+    { label: 'Total Articles', value: stats.totalArticles, icon: Newspaper, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20' },
+    { label: 'Total Views', value: stats.totalViews.toLocaleString(), icon: Eye, color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-900/20' },
+    { label: 'Total Comments', value: stats.totalComments, icon: MessageSquare, color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-900/20' },
+    { label: 'Total Users', value: stats.totalUsers, icon: Users, color: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-900/20' },
   ];
 
   return (
@@ -121,9 +121,7 @@ export default function AdminDashboard() {
               <div className={cn("p-3 rounded-xl", stat.bg)}>
                 <stat.icon className={stat.color} size={24} />
               </div>
-              <div className={cn("flex items-center gap-1 text-xs font-black", stat.up ? "text-green-600" : "text-red-600")}>
-                {stat.trend} {stat.up ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-              </div>
+
             </div>
             <h3 className="text-zinc-500 dark:text-zinc-400 text-sm font-bold mb-1">{stat.label}</h3>
             <p className="text-3xl font-black text-zinc-900 dark:text-white">{stat.value}</p>
