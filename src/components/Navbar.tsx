@@ -38,11 +38,16 @@ export default function Navbar({ isDarkMode, setIsDarkMode }: { isDarkMode: bool
 
   const handleLogout = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      navigate('/');
+      await supabase.auth.signOut();
     } catch (error) {
-      console.error("Logout error:", error);
+      console.error("Logout error (forcing manual clear):", error);
+    } finally {
+      // Force clear all Supabase auth tokens from localStorage regardless of lock state
+      Object.keys(localStorage)
+        .filter(key => key.startsWith('sb-'))
+        .forEach(key => localStorage.removeItem(key));
+      // Hard reload so auth state resets cleanly
+      window.location.href = '/';
     }
   };
 
