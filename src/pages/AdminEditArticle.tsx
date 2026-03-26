@@ -396,8 +396,7 @@ export default function AdminEditArticle() {
                   >
                     <input 
                       type="url" 
-                      required
-                      placeholder="Paste image URL or drag image here..."
+                      placeholder="Paste image URL or drag image here... (optional)"
                       value={formData.image_url}
                       onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
                       className="w-full bg-zinc-50 dark:bg-zinc-800 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-red-600 outline-none"
