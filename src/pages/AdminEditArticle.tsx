@@ -308,7 +308,7 @@ export default function AdminEditArticle() {
                   <textarea 
                     ref={contentRef}
                     required
-                    placeholder="Write your story here... (Drag & drop images to upload)"
+                    placeholder="Write your story here..."
                     value={formData.content}
                     onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                     className={`w-full bg-zinc-50 dark:bg-zinc-800 border-none rounded-xl px-6 py-4 focus:ring-2 focus:ring-red-600 outline-none min-h-[400px] font-mono text-sm transition-all ${isDragging ? 'ring-4 ring-red-600/20 bg-red-50/10' : ''}`}
