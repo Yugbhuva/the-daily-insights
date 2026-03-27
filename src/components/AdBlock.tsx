@@ -9,10 +9,11 @@ interface AdBlockProps {
 
 export default function AdBlock({ placement, className }: AdBlockProps) {
   const [adCode, setAdCode] = useState<string | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const isAdminPanel = location.pathname.startsWith('/admin');
 
+  // Fetch the ad code for this placement
   useEffect(() => {
     if (isAdminPanel) return;
 
@@ -21,43 +22,29 @@ export default function AdBlock({ placement, className }: AdBlockProps) {
         .from('ads')
         .select('code')
         .eq('id', placement)
-        .single();
-      
-      if (!error && data) {
-        setAdCode(data.code);
-      } else {
+        .maybeSingle(); // maybeSingle: returns null (not an error) if no row found
+
+      if (error) {
+        console.error(`AdBlock [${placement}] fetch error:`, error.message);
         setAdCode(null);
+        return;
       }
+      setAdCode(data?.code ?? null);
     };
 
     fetchAd();
-
-    // Set up real-time subscription
-    const channel = supabase
-      .channel(`public:ads:${placement}`)
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'ads',
-        filter: `id=eq.${placement}`
-      }, () => {
-        fetchAd();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, [placement, isAdminPanel]);
 
+  // Inject ad HTML/scripts into the inner div (NOT the root element)
+  // Using a separate inner div prevents React from losing the root node reference
   useEffect(() => {
-    if (!adCode || !containerRef.current || isAdminPanel) return;
+    if (!adCode || !innerRef.current || isAdminPanel) return;
 
-    // Clear previous content
-    containerRef.current.innerHTML = adCode;
+    const container = innerRef.current;
+    container.innerHTML = adCode;
 
-    // Manually execute scripts
-    const scripts = Array.from(containerRef.current.querySelectorAll('script'));
+    // innerHTML does not execute <script> tags — re-create them so they run
+    const scripts = Array.from(container.querySelectorAll('script'));
     scripts.forEach(oldScript => {
       const newScript = document.createElement('script');
       Array.from(oldScript.attributes).forEach(attr => {
@@ -67,31 +54,28 @@ export default function AdBlock({ placement, className }: AdBlockProps) {
       oldScript.parentNode?.replaceChild(newScript, oldScript);
     });
 
-    // Cleanup function to destroy GPT slots on unmount or adCode change
+    // Cleanup: destroy GPT slots on unmount to prevent duplicates
     return () => {
       const googletag = (window as any).googletag;
-      if (googletag && googletag.apiReady) {
+      if (googletag?.apiReady) {
         googletag.cmd.push(() => {
-          // Find and destroy slots that were defined in this container
-          const slots = googletag.pubads().getSlots();
-          const containerId = containerRef.current?.querySelector('[id^="div-gpt-ad"]')?.id;
+          const containerId = container.querySelector('[id^="div-gpt-ad"]')?.id;
           if (containerId) {
-            const slotsToDestroy = slots.filter((slot: any) => slot.getSlotElementId() === containerId);
-            if (slotsToDestroy.length > 0) {
-              googletag.destroySlots(slotsToDestroy);
-            }
+            const slots = googletag.pubads().getSlots();
+            const toDestroy = slots.filter((s: any) => s.getSlotElementId() === containerId);
+            if (toDestroy.length > 0) googletag.destroySlots(toDestroy);
           }
         });
       }
+      container.innerHTML = '';
     };
   }, [adCode, isAdminPanel]);
 
   if (!adCode || isAdminPanel) return null;
 
   return (
-    <div 
-      ref={containerRef} 
-      className={`ad-block-${placement} ${className || ''} min-h-[50px] flex items-center justify-center`} 
-    />
+    <div className={`ad-block-${placement} ${className || ''}`}>
+      <div ref={innerRef} />
+    </div>
   );
 }

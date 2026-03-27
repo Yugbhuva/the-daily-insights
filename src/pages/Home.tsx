@@ -297,12 +297,7 @@ export default function Home() {
             <div className="absolute -bottom-12 -right-12 w-40 h-40 bg-red-600/10 rounded-full blur-3xl"></div>
           </section>
 
-          {/* Ad Placeholder */}
           <AdBlock placement="home_body_3" className="bg-zinc-50 dark:bg-zinc-900 rounded-2xl p-4 border border-zinc-100 dark:border-zinc-800" />
-          
-          <div className="bg-zinc-100 dark:bg-zinc-800 aspect-square rounded-2xl flex items-center justify-center border-2 border-dashed border-zinc-200 dark:border-zinc-700">
-            <span className="text-zinc-400 text-xs font-bold uppercase tracking-widest">Advertisement</span>
-          </div>
         </aside>
       </div>
     </div>
