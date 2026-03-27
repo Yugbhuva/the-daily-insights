@@ -108,10 +108,14 @@ export default function ArticleDetail() {
 
       if (error) throw error;
       if (data) {
-        setArticle(data);
-        
-        // Increment views
-        await supabase.rpc('increment_views', { row_id: id });
+        // Increment views directly — no RPC function needed
+        await supabase
+          .from('articles')
+          .update({ views: (data.views ?? 0) + 1 })
+          .eq('id', id);
+
+        // Set article with incremented view count immediately
+        setArticle({ ...data, views: (data.views ?? 0) + 1 });
 
         // Fetch related articles
         const { data: relatedData } = await supabase

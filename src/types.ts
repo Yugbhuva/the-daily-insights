@@ -23,6 +23,8 @@ export interface Article {
   status: 'published' | 'draft';
   views: number;
   likes_count: number;
+  is_breaking?: boolean;
+  is_trending?: boolean;
   created_at: string;
   updated_at: string;
 }

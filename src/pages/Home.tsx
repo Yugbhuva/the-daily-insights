@@ -188,14 +188,14 @@ export default function Home() {
         <div className="lg:col-span-8 space-y-12">
           {/* Featured Headline */}
           {featuredArticle && (
-            <section className="group relative overflow-hidden rounded-3xl bg-zinc-900 aspect-[16/9] shadow-2xl">
+            <section className="group relative overflow-hidden rounded-3xl bg-zinc-200 dark:bg-zinc-900 aspect-[16/9] shadow-2xl">
               <img 
                 src={featuredArticle.image_url} 
                 alt={featuredArticle.title}
                 className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-700"
                 referrerPolicy="no-referrer"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/40 to-transparent"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-zinc-50 via-zinc-50/70 to-transparent dark:from-zinc-950 dark:via-zinc-950/40 dark:to-transparent"></div>
               <div className="absolute bottom-0 left-0 p-8 lg:p-12 w-full">
                 <Link 
                   to={`/category/${featuredArticle.category.toLowerCase()}`}
@@ -204,16 +204,16 @@ export default function Home() {
                   {featuredArticle.category}
                 </Link>
                 <Link to={`/article/${featuredArticle.id}`}>
-                  <h1 className="text-3xl lg:text-5xl font-black text-white mb-4 leading-[1.1] hover:text-red-500 transition-colors">
+                  <h1 className="text-3xl lg:text-5xl font-black text-zinc-900 dark:text-white mb-4 leading-[1.1] hover:text-red-500 transition-colors">
                     {featuredArticle.title}
                   </h1>
                 </Link>
-                <p className="text-zinc-300 text-lg line-clamp-2 mb-6 max-w-2xl font-medium">
+                <p className="text-zinc-600 dark:text-zinc-300 text-lg line-clamp-2 mb-6 max-w-2xl font-medium">
                   {featuredArticle.excerpt}
                 </p>
-                <div className="flex items-center gap-4 text-zinc-400 text-sm font-bold">
+                <div className="flex items-center gap-4 text-zinc-600 dark:text-zinc-400 text-sm font-bold">
                   <span>{featuredArticle.author_name}</span>
-                  <span className="w-1 h-1 bg-zinc-600 rounded-full"></span>
+                  <span className="w-1 h-1 bg-zinc-400 dark:bg-zinc-600 rounded-full"></span>
                   <span>{featuredArticle.views.toLocaleString()} views</span>
                 </div>
               </div>
@@ -225,7 +225,7 @@ export default function Home() {
           {/* Latest News Grid */}
           <section>
             <div className="flex items-center justify-between mb-8">
-              <h2 className="text-3xl font-black tracking-tight flex items-center gap-3"  style={{ color:'white' }} >
+              <h2 className="text-3xl font-black tracking-tight flex items-center gap-3">
                 <Newspaper className="text-red-600"/> Latest Headlines
               </h2>
               <div className="h-px flex-1 bg-zinc-100 dark:bg-zinc-800 mx-6"></div>
@@ -244,7 +244,7 @@ export default function Home() {
 
           {/* Category Sections (Example: Technology) */}
           <section className="bg-zinc-50 dark:bg-zinc-900/50 p-8 rounded-3xl border border-zinc-100 dark:border-zinc-800">
-            <div className="flex items-center justify-between mb-8"  style={{ color:'white' }} >
+            <div className="flex items-center justify-between mb-8">
               <h2 className="text-2xl font-black tracking-tight">Technology</h2>
               <Link to="/category/technology" className="text-xs font-black uppercase tracking-widest text-zinc-400 hover:text-red-600 transition-colors">
                 Explore More
@@ -262,7 +262,7 @@ export default function Home() {
         <aside className="lg:col-span-4 space-y-12">
           {/* Trending Now */}
           <section className="bg-white dark:bg-zinc-900 p-8 rounded-3xl border border-zinc-100 dark:border-zinc-800 shadow-sm">
-            <h2 className="text-xl font-black mb-8 flex items-center gap-2"  style={{ color:'white' }} >
+            <h2 className="text-xl font-black mb-8 flex items-center gap-2">
               <TrendingUp className="text-red-600" /> Trending Now
             </h2>
             <div className="space-y-8">
@@ -290,17 +290,17 @@ export default function Home() {
           </section>
 
           {/* Newsletter Widget */}
-          <section className="bg-zinc-900 text-white p-8 rounded-2xl overflow-hidden relative">
+          <section className="bg-zinc-100 dark:bg-zinc-900 text-zinc-900 dark:text-white p-8 rounded-2xl overflow-hidden relative">
             <div className="relative z-10">
               <h2 className="text-2xl font-black mb-4">Stay Ahead of the Curve</h2>
-              <p className="text-zinc-400 text-sm mb-6">
+              <p className="text-zinc-500 dark:text-zinc-400 text-sm mb-6">
                 Get the most important stories delivered to your inbox every morning.
               </p>
               <form className="space-y-3">
                 <input 
                   type="email" 
                   placeholder="Your email address"
-                  className="w-full bg-zinc-800 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-red-600"
+                  className="w-full bg-zinc-200 dark:bg-zinc-800 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-red-600 text-zinc-900 dark:text-white placeholder:text-zinc-400"
                 />
                 <button className="w-full py-3 bg-red-600 text-white font-black rounded-xl hover:bg-red-700 transition-colors">
                   Subscribe Now

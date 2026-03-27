@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 import imageCompression from 'browser-image-compression';
 import { Article } from '../types';
 import { useAuth } from '../context/AuthContext';
-import { Save, X, Image as ImageIcon, Tag, Layout, Upload, Loader2, Trash2 } from 'lucide-react';
+import { Save, X, Image as ImageIcon, Tag, Layout, Upload, Loader2, Trash2, Zap, TrendingUp } from 'lucide-react';
 
 const categories = ['Politics', 'Business', 'Technology', 'Sports', 'Entertainment', 'Health', 'World'];
 
@@ -25,6 +25,8 @@ export default function AdminEditArticle() {
     status: 'draft',
     views: 0,
     likes_count: 0,
+    is_breaking: false,
+    is_trending: false,
   });
   const [tagInput, setTagInput] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -464,6 +466,44 @@ export default function AdminEditArticle() {
                     <option key={cat} value={cat}>{cat}</option>
                   ))}
                 </select>
+              </div>
+
+              {/* Breaking News & Trending toggles */}
+              <div>
+                <label className="text-xs font-black uppercase tracking-widest text-zinc-400 mb-3 block">Labels</label>
+                <div className="flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, is_breaking: !formData.is_breaking })}
+                    className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl font-black text-sm transition-all ${
+                      formData.is_breaking
+                        ? 'bg-red-600 text-white shadow-lg shadow-red-600/30'
+                        : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600'
+                    }`}
+                  >
+                    <Zap size={16} className={formData.is_breaking ? 'fill-current' : ''} />
+                    Breaking News
+                    {formData.is_breaking && (
+                      <span className="ml-auto text-[10px] font-black uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded-full">ON</span>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, is_trending: !formData.is_trending })}
+                    className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl font-black text-sm transition-all ${
+                      formData.is_trending
+                        ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30'
+                        : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:text-amber-500'
+                    }`}
+                  >
+                    <TrendingUp size={16} />
+                    Trending Now
+                    {formData.is_trending && (
+                      <span className="ml-auto text-[10px] font-black uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded-full">ON</span>
+                    )}
+                  </button>
+                </div>
               </div>
 
               <div className="pt-6 border-t border-zinc-100 dark:border-zinc-800 space-y-3">
