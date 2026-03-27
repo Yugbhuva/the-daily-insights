@@ -72,7 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const loadingTimeout = setTimeout(() => {
       console.warn('Auth loading timeout reached, continuing without auth');
       setLoading(false);
-    }, 20000);
+    }, 5000);
 
     return () => {
       subscription.unsubscribe();

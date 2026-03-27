@@ -18,7 +18,7 @@ const PLACEMENTS = [
 ];
 
 export default function AdminAds() {
-  const { isAdmin, loading: authLoading } = useAuth();
+  const { isAdmin } = useAuth();
   const [ads, setAds] = useState<AdConfig[]>([]);
   const [selectedPlacement, setSelectedPlacement] = useState(PLACEMENTS[0].id);
   const [adCode, setAdCode] = useState('');
@@ -46,9 +46,7 @@ export default function AdminAds() {
     }
   };
 
-  // Wait until auth is resolved before fetching
   useEffect(() => {
-    if (authLoading) return;
     fetchAds();
 
     // Set up real-time subscription
@@ -62,7 +60,7 @@ export default function AdminAds() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [authLoading]);
+  }, []);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,14 +120,6 @@ export default function AdminAds() {
     setAdCode(ad.code);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-
-  if (!isAdmin && !authLoading) {
-    return (
-      <AdminLayout title="Ad Management">
-        <div className="py-20 text-center text-zinc-400">Access denied.</div>
-      </AdminLayout>
-    );
-  }
 
   return (
     <AdminLayout title="Ad Management">
