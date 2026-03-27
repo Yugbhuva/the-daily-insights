@@ -72,17 +72,20 @@ export default function AdminAds() {
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
 
       // Use fetch directly to bypass the Supabase client auth pipeline hang
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 12000);
 
-      const res = await fetch(`${supabaseUrl}/rest/v1/ads`, {
+      const res = await fetch(`${supabaseUrl}/rest/v1/ads?on_conflict=id`, {
         method: 'POST',
         signal: controller.signal,
         headers: {
           'apikey': supabaseKey,
-          'Authorization': `Bearer ${supabaseKey}`,
+          // Use the logged-in user's JWT so RLS can validate admin access.
+          'Authorization': `Bearer ${accessToken || supabaseKey}`,
           'Content-Type': 'application/json',
           'Prefer': 'resolution=merge-duplicates,return=minimal',
         },
