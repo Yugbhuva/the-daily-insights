@@ -69,41 +69,51 @@ export default function AdminAds() {
     setSaving(true);
     setMessage(null);
 
-    const timeout = (ms: number) =>
-      new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Request timed out. Check your connection and try again.')), ms)
-      );
-
     try {
-      const { error } = await Promise.race([
-        supabase
-          .from('ads')
-          .upsert(
-            {
-              id: selectedPlacement,
-              code: adCode.trim(),
-              updated_at: new Date().toISOString()
-            },
-            { onConflict: 'id' }
-          ),
-        timeout(10000)
-      ]) as any;
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-      if (error) {
-        console.error('upsert error:', error);
-        throw error;
+      // Use fetch directly to bypass the Supabase client auth pipeline hang
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
+
+      const res = await fetch(`${supabaseUrl}/rest/v1/ads`, {
+        method: 'POST',
+        signal: controller.signal,
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=merge-duplicates,return=minimal',
+        },
+        body: JSON.stringify({
+          id: selectedPlacement,
+          code: adCode.trim(),
+          updated_at: new Date().toISOString(),
+        }),
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(errText || `HTTP ${res.status}`);
       }
+
       setMessage({ type: 'success', text: 'Ad block updated successfully!' });
       setAdCode('');
-      await Promise.race([fetchAds(), timeout(8000)]).catch(() => {});
-
+      fetchAds(); // non-blocking refresh
     } catch (error: any) {
-      console.error('Save ad error:', error);
-      setMessage({ type: 'error', text: `Failed to update ad block: ${error?.message || 'Unknown error'}` });
+      const msg = error?.name === 'AbortError'
+        ? 'Request timed out. Supabase may be unreachable.'
+        : error?.message || 'Unknown error';
+      console.error('Save ad error:', msg);
+      setMessage({ type: 'error', text: `Failed to save: ${msg}` });
     } finally {
       setSaving(false);
     }
   };
+
 
   const handleDelete = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this ad block?')) return;
