@@ -8,7 +8,8 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function AdminDashboard() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, loading: authLoading } = useAuth();
+  const [dashboardLoading, setDashboardLoading] = useState(true);
   const [stats, setStats] = useState({
     totalArticles: 0,
     totalViews: 0,
@@ -19,9 +20,13 @@ export default function AdminDashboard() {
   const [recentComments, setRecentComments] = useState<Comment[]>([]);
 
   const fetchDashboardData = async () => {
-    if (!isAdmin) return;
+    if (!isAdmin) {
+      setDashboardLoading(false);
+      return;
+    }
 
     try {
+      setDashboardLoading(true);
       // Fetch Counts
       const { count: articlesCount } = await supabase
         .from('articles')
@@ -69,12 +74,18 @@ export default function AdminDashboard() {
 
     } catch (error) {
       console.error("Dashboard data error:", error);
+    } finally {
+      setDashboardLoading(false);
     }
   };
 
   useEffect(() => {
+    if (authLoading) return;
     fetchDashboardData();
+  }, [isAdmin, authLoading]);
 
+  useEffect(() => {
+    if (authLoading || !isAdmin) return;
     // Set up real-time subscriptions
     const articlesChannel = supabase
       .channel('admin:dashboard:articles')
@@ -102,7 +113,7 @@ export default function AdminDashboard() {
       supabase.removeChannel(commentsChannel);
       supabase.removeChannel(profilesChannel);
     };
-  }, [isAdmin]);
+  }, [isAdmin, authLoading]);
 
   const statCards = [
     { label: 'Total Articles', value: stats.totalArticles, icon: Newspaper, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20' },
@@ -110,6 +121,14 @@ export default function AdminDashboard() {
     { label: 'Total Comments', value: stats.totalComments, icon: MessageSquare, color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-900/20' },
     { label: 'Total Users', value: stats.totalUsers, icon: Users, color: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-900/20' },
   ];
+
+  if (dashboardLoading) {
+    return (
+      <AdminLayout title="Admin Dashboard">
+        <div className="py-16 text-center text-zinc-500 dark:text-zinc-400">Loading dashboard data...</div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout title="Admin Dashboard">
