@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, User, Menu, X, LogOut, LayoutDashboard, Bookmark, Sun, Moon, ChevronDown, TrendingUp } from 'lucide-react';
+import { Search, User, Menu, X, LogOut, LayoutDashboard, Bookmark, Sun, Moon, ChevronDown, TrendingUp, Home } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { cn } from '../lib/utils';
@@ -121,6 +121,14 @@ export default function Navbar({ isDarkMode, setIsDarkMode }: { isDarkMode: bool
           >
             {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
           </button>
+
+          <Link
+            to="/"
+            className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-lg text-zinc-600 dark:text-zinc-400"
+            title="Home"
+          >
+            <Home size={20} />
+          </Link>
           
           {user ? (
             <div className="relative group">
