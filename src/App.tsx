@@ -15,6 +15,10 @@ import Profile from './pages/Profile';
 import Search from './pages/Search';
 import CategoryPage from './pages/CategoryPage';
 import Bookmarks from './pages/Bookmarks';
+import AboutUs from './pages/AboutUs';
+import ContactUs from './pages/ContactUs';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
 import { useEffect, useState } from 'react';
 
 function App() {
@@ -60,6 +64,10 @@ function AppContent({ isDarkMode, setIsDarkMode }: { isDarkMode: boolean; setIsD
           <Route path="/search" element={<Search />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/bookmarks" element={<Bookmarks />} />
+          <Route path="/about" element={<AboutUs />} />
+          <Route path="/contact" element={<ContactUs />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
           
           {/* Admin Routes */}
           <Route path="/admin" element={<AdminDashboard />} />
