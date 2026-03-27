@@ -69,25 +69,34 @@ export default function AdminAds() {
     setSaving(true);
     setMessage(null);
 
+    const timeout = (ms: number) =>
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Request timed out. Check your connection and try again.')), ms)
+      );
+
     try {
-      const { error } = await supabase
-        .from('ads')
-        .upsert(
-          {
-            id: selectedPlacement,
-            code: adCode.trim(),
-            updated_at: new Date().toISOString()
-          },
-          { onConflict: 'id' }
-        );
-      
+      const { error } = await Promise.race([
+        supabase
+          .from('ads')
+          .upsert(
+            {
+              id: selectedPlacement,
+              code: adCode.trim(),
+              updated_at: new Date().toISOString()
+            },
+            { onConflict: 'id' }
+          ),
+        timeout(10000)
+      ]) as any;
+
       if (error) {
         console.error('upsert error:', error);
         throw error;
       }
       setMessage({ type: 'success', text: 'Ad block updated successfully!' });
       setAdCode('');
-      await fetchAds();
+      await Promise.race([fetchAds(), timeout(8000)]).catch(() => {});
+
     } catch (error: any) {
       console.error('Save ad error:', error);
       setMessage({ type: 'error', text: `Failed to update ad block: ${error?.message || 'Unknown error'}` });
