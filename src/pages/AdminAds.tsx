@@ -73,11 +73,12 @@ export default function AdminAds() {
           id: selectedPlacement,
           code: adCode.trim(),
           updated_at: new Date().toISOString()
-        });
+        }, { onConflict: 'id' });
       
       if (error) throw error;
       setMessage({ type: 'success', text: 'Ad block updated successfully!' });
       setAdCode('');
+      await fetchAds();
     } catch (error) {
       console.error("Save ad error:", error);
       setMessage({ type: 'error', text: 'Failed to update ad block.' });
