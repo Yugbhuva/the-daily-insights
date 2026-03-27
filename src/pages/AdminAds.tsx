@@ -18,7 +18,7 @@ const PLACEMENTS = [
 ];
 
 export default function AdminAds() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, loading: authLoading } = useAuth();
   const [ads, setAds] = useState<AdConfig[]>([]);
   const [selectedPlacement, setSelectedPlacement] = useState(PLACEMENTS[0].id);
   const [adCode, setAdCode] = useState('');
@@ -27,23 +27,28 @@ export default function AdminAds() {
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
   const fetchAds = async () => {
-    if (!isAdmin) return;
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from('ads')
         .select('*')
         .order('updated_at', { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        console.error('fetchAds error:', error);
+        throw error;
+      }
       setAds(data || []);
-    } catch (error) {
-      console.error('Error fetching ads:', error);
+    } catch (error: any) {
+      console.error('Error fetching ads:', error?.message || error);
     } finally {
       setLoading(false);
     }
   };
 
+  // Wait until auth is resolved before fetching
   useEffect(() => {
+    if (authLoading) return;
     fetchAds();
 
     // Set up real-time subscription
@@ -57,7 +62,7 @@ export default function AdminAds() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [isAdmin]);
+  }, [authLoading]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,19 +74,25 @@ export default function AdminAds() {
     try {
       const { error } = await supabase
         .from('ads')
-        .upsert({
-          id: selectedPlacement,
-          code: adCode.trim(),
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'id' });
+        .upsert(
+          {
+            id: selectedPlacement,
+            code: adCode.trim(),
+            updated_at: new Date().toISOString()
+          },
+          { onConflict: 'id' }
+        );
       
-      if (error) throw error;
+      if (error) {
+        console.error('upsert error:', error);
+        throw error;
+      }
       setMessage({ type: 'success', text: 'Ad block updated successfully!' });
       setAdCode('');
       await fetchAds();
-    } catch (error) {
-      console.error("Save ad error:", error);
-      setMessage({ type: 'error', text: 'Failed to update ad block.' });
+    } catch (error: any) {
+      console.error('Save ad error:', error);
+      setMessage({ type: 'error', text: `Failed to update ad block: ${error?.message || 'Unknown error'}` });
     } finally {
       setSaving(false);
     }
@@ -95,9 +106,14 @@ export default function AdminAds() {
         .delete()
         .eq('id', id);
       
-      if (error) throw error;
-    } catch (error) {
-      console.error("Delete ad error:", error);
+      if (error) {
+        console.error('delete error:', error);
+        throw error;
+      }
+      await fetchAds();
+    } catch (error: any) {
+      console.error('Delete ad error:', error?.message || error);
+      setMessage({ type: 'error', text: `Failed to delete: ${error?.message || 'Unknown error'}` });
     }
   };
 
@@ -106,6 +122,14 @@ export default function AdminAds() {
     setAdCode(ad.code);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  if (!isAdmin && !authLoading) {
+    return (
+      <AdminLayout title="Ad Management">
+        <div className="py-20 text-center text-zinc-400">Access denied.</div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout title="Ad Management">
