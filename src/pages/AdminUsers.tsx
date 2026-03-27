@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import AdminLayout from '../components/AdminLayout';
 import { supabase } from '../lib/supabase';
 import { UserProfile } from '../types';
-import { Shield, User, Mail, Calendar, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { Shield, User, Mail, Calendar, ShieldCheck } from 'lucide-react';
 import { formatDate, cn } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
 
@@ -11,7 +11,7 @@ export default function AdminUsers() {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [confirmToggle, setConfirmToggle] = useState<string | null>(null);
+
 
   const fetchUsers = async () => {
     if (!isAdmin) return;
@@ -46,20 +46,7 @@ export default function AdminUsers() {
     };
   }, [isAdmin]);
 
-  const toggleRole = async (user: UserProfile) => {
-    const newRole = user.role === 'admin' ? 'user' : 'admin';
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ role: newRole })
-        .eq('id', user.id);
-      
-      if (error) throw error;
-      setConfirmToggle(null);
-    } catch (error) {
-      console.error('Error toggling role:', error);
-    }
-  };
+
 
   return (
     <AdminLayout title="User Management">
@@ -72,7 +59,6 @@ export default function AdminUsers() {
                 <th className="px-6 py-4">Email</th>
                 <th className="px-6 py-4">Role</th>
                 <th className="px-6 py-4">Joined</th>
-                <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
@@ -108,37 +94,7 @@ export default function AdminUsers() {
                       <Calendar size={14} className="text-zinc-400" /> {formatDate(u.created_at)}
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-right">
-                    {confirmToggle === u.id ? (
-                      <div className="flex items-center justify-end gap-2 animate-in fade-in slide-in-from-right-2 duration-200">
-                        <button 
-                          onClick={() => toggleRole(u)}
-                          className="px-3 py-1 bg-red-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-red-700"
-                        >
-                          Confirm
-                        </button>
-                        <button 
-                          onClick={() => setConfirmToggle(null)}
-                          className="p-1 text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
-                        >
-                          <ShieldAlert size={14} />
-                        </button>
-                      </div>
-                    ) : (
-                      <button 
-                        onClick={() => setConfirmToggle(u.id)}
-                        className={cn(
-                          "p-2 rounded-xl transition-colors",
-                          u.role === 'admin' 
-                            ? "text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20" 
-                            : "text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                        )}
-                        title={u.role === 'admin' ? "Demote to User" : "Promote to Admin"}
-                      >
-                        {u.role === 'admin' ? <ShieldAlert size={18} /> : <Shield size={18} />}
-                      </button>
-                    )}
-                  </td>
+
                 </tr>
               ))}
             </tbody>
