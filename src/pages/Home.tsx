@@ -49,7 +49,7 @@ const MOCK_ARTICLES: Partial<Article>[] = [
 
 export default function Home() {
   console.log('Home component rendering...');
-  const { profile } = useAuth();
+  const { profile, loading: authLoading } = useAuth();
   const [featuredArticle, setFeaturedArticle] = useState<Article | null>(null);
   const [latestArticles, setLatestArticles] = useState<Article[]>([]);
   const [trendingArticles, setTrendingArticles] = useState<Article[]>([]);
@@ -70,34 +70,43 @@ export default function Home() {
   const fetchArticles = async () => {
     try {
       // Featured Article (most viewed published)
-      const { data: featuredData } = await supabase
+      const { data: featuredData, error: featuredError } = await supabase
         .from('articles')
         .select('*')
         .eq('status', 'published')
         .order('views', { ascending: false })
         .limit(1)
-        .single();
-      
-      setFeaturedArticle(featuredData);
+        .maybeSingle();
+
+      if (featuredError) {
+        console.error('Error fetching featured article:', featuredError);
+      }
+      setFeaturedArticle(featuredData || null);
 
       // Latest Articles
-      const { data: latestData } = await supabase
+      const { data: latestData, error: latestError } = await supabase
         .from('articles')
         .select('*')
         .eq('status', 'published')
         .order('created_at', { ascending: false })
         .limit(10);
-      
+
+      if (latestError) {
+        console.error('Error fetching latest articles:', latestError);
+      }
       setLatestArticles(latestData || []);
 
       // Trending (most likes)
-      const { data: trendingData } = await supabase
+      const { data: trendingData, error: trendingError } = await supabase
         .from('articles')
         .select('*')
         .eq('status', 'published')
         .order('likes_count', { ascending: false })
         .limit(5);
-      
+
+      if (trendingError) {
+        console.error('Error fetching trending articles:', trendingError);
+      }
       setTrendingArticles(trendingData || []);
     } catch (error) {
       console.error('Error fetching articles:', error);
@@ -107,8 +116,12 @@ export default function Home() {
   };
 
   useEffect(() => {
-    fetchArticles();
+    if (!authLoading) {
+      fetchArticles();
+    }
+  }, [authLoading]);
 
+  useEffect(() => {
     // Set up real-time subscription
     const channel = supabase
       .channel('public:articles')
@@ -151,7 +164,7 @@ export default function Home() {
     }
   }, [profile]);
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="container mx-auto px-4 py-20 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600"></div>

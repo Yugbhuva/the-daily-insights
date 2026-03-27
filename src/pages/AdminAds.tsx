@@ -18,7 +18,7 @@ const PLACEMENTS = [
 ];
 
 export default function AdminAds() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user, profile } = useAuth();
   const [ads, setAds] = useState<AdConfig[]>([]);
   const [selectedPlacement, setSelectedPlacement] = useState(PLACEMENTS[0].id);
   const [adCode, setAdCode] = useState('');
@@ -70,10 +70,37 @@ export default function AdminAds() {
     setMessage(null);
 
     try {
+      if (!isAdmin) {
+        throw new Error('Admin access required.');
+      }
+
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
       const { data: sessionData } = await supabase.auth.getSession();
       const accessToken = sessionData.session?.access_token;
+      const userId = sessionData.session?.user?.id;
+
+      if (!accessToken || !userId) {
+        throw new Error('Your session is missing. Please sign out and sign in again.');
+      }
+
+      const payload = {
+        id: selectedPlacement,
+        code: adCode.trim(),
+        updated_at: new Date().toISOString(),
+      };
+
+      // Prefer client upsert so current auth context is used end-to-end.
+      const { error: upsertError } = await supabase
+        .from('ads')
+        .upsert(payload, { onConflict: 'id' });
+
+      if (!upsertError) {
+        setMessage({ type: 'success', text: 'Ad block updated successfully!' });
+        setAdCode('');
+        fetchAds(); // non-blocking refresh
+        return;
+      }
 
       // Use fetch directly to bypass the Supabase client auth pipeline hang
       const controller = new AbortController();
@@ -85,22 +112,19 @@ export default function AdminAds() {
         headers: {
           'apikey': supabaseKey,
           // Use the logged-in user's JWT so RLS can validate admin access.
-          'Authorization': `Bearer ${accessToken || supabaseKey}`,
+          'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
           'Prefer': 'resolution=merge-duplicates,return=minimal',
         },
-        body: JSON.stringify({
-          id: selectedPlacement,
-          code: adCode.trim(),
-          updated_at: new Date().toISOString(),
-        }),
+        body: JSON.stringify(payload),
       });
 
       clearTimeout(timeoutId);
 
       if (!res.ok) {
         const errText = await res.text();
-        throw new Error(errText || `HTTP ${res.status}`);
+        const adminRole = profile?.role || 'unknown';
+        throw new Error(`${errText || `HTTP ${res.status}`} (uid=${userId}, role=${adminRole}, email=${user?.email || 'unknown'})`);
       }
 
       setMessage({ type: 'success', text: 'Ad block updated successfully!' });
