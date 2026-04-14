@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import { Article, Comment } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { formatDate, cn } from '../lib/utils';
-import { ThumbsUp, MessageSquare, Share2, Bookmark, Clock, User, ChevronRight, Send, Trash2 } from 'lucide-react';
+import { ThumbsUp, MessageSquare, Share2, Bookmark, Clock, User, ChevronRight, Send, Trash2, Check, Link as LinkIcon } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import NewsCard from '../components/NewsCard';
@@ -88,14 +88,18 @@ const MarkdownComponents = {
 
 export default function ArticleDetail() {
   const { id } = useParams<{ id: string }>();
-  const { user, profile } = useAuth();
+  const { user, profile, bookmarks, refreshBookmarks } = useAuth();
   const [article, setArticle] = useState<Article | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [relatedArticles, setRelatedArticles] = useState<Article[]>([]);
   const [newComment, setNewComment] = useState('');
   const [isLiked, setIsLiked] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [shareCopied, setShareCopied] = useState(false);
   const navigate = useNavigate();
+
+  // Derive bookmark state directly from context
+  const isBookmarked = article ? bookmarks.includes(article.id) : false;
 
   const fetchArticle = async () => {
     if (!id) return;
@@ -211,6 +215,36 @@ export default function ArticleDetail() {
       }
     } catch (error) {
       console.error('Error toggling like:', error);
+    }
+  };
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    const title = article?.title || 'Check this out';
+    if (navigator.share) {
+      try { await navigator.share({ title, url }); return; } catch { return; }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2500);
+    } catch {
+      prompt('Copy this link:', url);
+    }
+  };
+
+  const handleBookmark = async () => {
+    if (!user || !article) return;
+    try {
+      if (isBookmarked) {
+        await supabase.from('bookmarks').delete()
+          .eq('article_id', article.id).eq('user_id', user.id);
+      } else {
+        await supabase.from('bookmarks').insert([{ article_id: article.id, user_id: user.id }]);
+      }
+      await refreshBookmarks();
+    } catch (error) {
+      console.error('Error toggling bookmark:', error);
     }
   };
 
@@ -350,11 +384,35 @@ export default function ArticleDetail() {
               <ThumbsUp size={18} fill={isLiked ? "currentColor" : "none"} />
               <span className="text-sm font-bold">{article.likes_count}</span>
             </button>
-            <button className="p-2 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-900">
-              <Share2 size={18} />
+
+            {/* Share button */}
+            <button
+              onClick={handleShare}
+              title="Share article"
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-2 border rounded-xl transition-all duration-200 text-sm font-bold",
+                shareCopied
+                  ? "bg-green-600 border-green-600 text-white"
+                  : "border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+              )}
+            >
+              {shareCopied ? <Check size={16} /> : <Share2 size={16} />}
+              <span className="hidden sm:inline">{shareCopied ? 'Copied!' : 'Share'}</span>
             </button>
-            <button className="p-2 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-900">
-              <Bookmark size={18} />
+
+            {/* Bookmark button */}
+            <button
+              onClick={handleBookmark}
+              title={user ? (isBookmarked ? 'Remove bookmark' : 'Save article') : 'Login to save'}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-2 border rounded-xl transition-all duration-200 text-sm font-bold",
+                isBookmarked
+                  ? "bg-zinc-900 dark:bg-white border-zinc-900 dark:border-white text-white dark:text-zinc-900"
+                  : "border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+              )}
+            >
+              <Bookmark size={16} fill={isBookmarked ? 'currentColor' : 'none'} />
+              <span className="hidden sm:inline">{isBookmarked ? 'Saved' : 'Save'}</span>
             </button>
           </div>
         </div>
