@@ -1,5 +1,5 @@
-import {StrictMode} from 'react';
-import {createRoot} from 'react-dom/client';
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
 import { HelmetProvider } from 'react-helmet-async';
 import App from './App.tsx';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -16,7 +16,7 @@ console.log('App starting...');
   const googletag = (window as any).googletag;
   const originalDefineSlot = googletag.defineSlot;
   if (originalDefineSlot) {
-    googletag.defineSlot = function() {
+    googletag.defineSlot = function () {
       const slot = originalDefineSlot.apply(this, arguments);
       if (!slot) {
         console.warn('GPT defineSlot returned null. Returning dummy object to prevent errors.');
