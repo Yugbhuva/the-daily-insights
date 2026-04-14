@@ -216,8 +216,7 @@ export default function AdminEditArticle() {
       }
       console.error('Upload error:', error);
       setUploadProgress(0);
-      const message = error?.message || 'Failed to upload image.';
-      alert(message);
+      setSaveMessage({ type: 'error', text: error?.message || 'Failed to upload image.' });
     } finally {
       if (!isImageUploadCancelled) setUploading(false);
       if (isImageUploadCancelled) {
@@ -295,8 +294,7 @@ export default function AdminEditArticle() {
       }
       console.error('Content upload error:', error);
       setContentUploadProgress(0);
-      const message = error?.message || 'Failed to upload image.';
-      alert(message);
+      setSaveMessage({ type: 'error', text: error?.message || 'Failed to upload content image.' });
     } finally {
       if (!isContentUploadCancelled) setContentUploading(false);
       if (isContentUploadCancelled) {

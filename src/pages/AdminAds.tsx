@@ -27,6 +27,7 @@ export default function AdminAds() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // ─── Fetch ───────────────────────────────────────────────────
@@ -106,7 +107,7 @@ export default function AdminAds() {
 
   // ─── Delete ──────────────────────────────────────────────────
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Delete this ad block?')) return;
+    setConfirmDeleteId(null);
     setDeletingId(id);
     try {
       const { error } = await supabase.from('ads').delete().eq('id', id);
@@ -245,14 +246,31 @@ export default function AdminAds() {
                           Updated: {new Date(ad.updated_at).toLocaleString()}
                         </p>
                       </div>
-                      <button
-                        onClick={() => handleDelete(ad.id)}
-                        disabled={deletingId === ad.id}
-                        className="p-2 text-zinc-400 hover:text-red-600 transition-colors disabled:opacity-40 shrink-0"
-                        title="Delete"
-                      >
-                        <Trash2 size={16} className={deletingId === ad.id ? 'animate-pulse' : ''} />
-                      </button>
+                      {confirmDeleteId === ad.id ? (
+                        <div className="flex items-center gap-2 shrink-0 animate-in fade-in slide-in-from-right-2 duration-150">
+                          <button
+                            onClick={() => handleDelete(ad.id)}
+                            disabled={deletingId === ad.id}
+                            className="px-3 py-1 bg-red-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-red-700 disabled:opacity-50"
+                          >
+                            {deletingId === ad.id ? 'Deleting…' : 'Confirm'}
+                          </button>
+                          <button
+                            onClick={() => setConfirmDeleteId(null)}
+                            className="p-1 text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
+                          >
+                            <span className="text-xs font-bold">Cancel</span>
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setConfirmDeleteId(ad.id)}
+                          className="p-2 text-zinc-400 hover:text-red-600 transition-colors shrink-0"
+                          title="Delete"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
