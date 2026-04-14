@@ -78,8 +78,14 @@ export default function AdminEditArticle() {
     setSaving(true);
     console.log('Saving started, formData:', formData);
 
+    // Strip label columns that don't exist in the DB schema yet.
+    // ⚠️ To save is_breaking / is_trending, run in Supabase SQL editor first:
+    //   alter table public.articles add column if not exists is_breaking boolean default false;
+    //   alter table public.articles add column if not exists is_trending boolean default false;
+    // Then replace `safeFormData` below with `formData` directly.
+    const { is_breaking: _ib, is_trending: _it, ...safeFormData } = formData;
     const articleData = {
-      ...formData,
+      ...safeFormData,
       status: targetStatus,
       author_id: user.id,
       author_name: profile?.name || 'Admin',
