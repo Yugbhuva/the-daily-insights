@@ -8,48 +8,11 @@ import { useAuth } from '../context/AuthContext';
 import AdBlock from '../components/AdBlock';
 import SEO from '../components/SEO';
 
-const MOCK_ARTICLES: Partial<Article>[] = [
-  {
-    title: "Global Markets Rally as Inflation Data Shows Cooling Trend",
-    excerpt: "Investors are optimistic as the latest economic reports suggest a potential pause in interest rate hikes by major central banks.",
-    content: "Full content here...",
-    category: "Business",
-    image_url: "https://picsum.photos/seed/business/1200/800",
-    author_name: "Sarah Jenkins",
-    status: "published",
-    views: 1240,
-    likes_count: 85,
-    tags: ["Economy", "Finance", "Markets"]
-  },
-  {
-    title: "New Breakthrough in Quantum Computing Promises Unprecedented Speed",
-    excerpt: "Researchers have achieved a stable quantum state that could revolutionize how we process complex data and solve global challenges.",
-    content: "Full content here...",
-    category: "Technology",
-    image_url: "https://picsum.photos/seed/tech/1200/800",
-    author_name: "David Chen",
-    status: "published",
-    views: 3500,
-    likes_count: 245,
-    tags: ["Quantum", "Science", "Tech"]
-  },
-  {
-    title: "Championship Finals: Underdogs Secure Historic Victory",
-    excerpt: "In a stunning upset, the local team defeated the reigning champions in a nail-biting finish that will be remembered for decades.",
-    content: "Full content here...",
-    category: "Sports",
-    image_url: "https://picsum.photos/seed/sports/1200/800",
-    author_name: "Mike Ross",
-    status: "published",
-    views: 5600,
-    likes_count: 412,
-    tags: ["Sports", "Victory", "Championship"]
-  }
-];
+
 
 export default function Home() {
   console.log('Home component rendering...');
-  const { profile, loading: authLoading } = useAuth();
+  const { loading: authLoading } = useAuth();
   const [featuredArticle, setFeaturedArticle] = useState<Article | null>(null);
   const [latestArticles, setLatestArticles] = useState<Article[]>([]);
   const [trendingArticles, setTrendingArticles] = useState<Article[]>([]);
@@ -135,34 +98,7 @@ export default function Home() {
     };
   }, []);
 
-  useEffect(() => {
-    const checkAndSeed = async () => {
-      if (profile?.role !== 'admin') return;
-      
-      const { count } = await supabase
-        .from('articles')
-        .select('*', { count: 'exact', head: true });
 
-      if (count === 0) {
-        console.log('Seeding mock data...');
-        const { data: userData } = await supabase.auth.getUser();
-        const userId = userData.user?.id || null;
-
-        const articlesToSeed = MOCK_ARTICLES.map(art => ({
-          ...art,
-          author_id: userId,
-          author_name: art.author_name || 'System'
-        }));
-
-        await supabase.from('articles').insert(articlesToSeed);
-        fetchArticles();
-      }
-    };
-    
-    if (profile) {
-      checkAndSeed();
-    }
-  }, [profile]);
 
   if (loading || authLoading) {
     return (
