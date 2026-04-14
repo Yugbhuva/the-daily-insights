@@ -7,13 +7,32 @@ interface AdBlockProps {
   className?: string;
 }
 
+/**
+ * Injects an external script tag only once per page load.
+ * If a script with the same `src` already exists in <head>, it is skipped.
+ */
+function injectExternalScript(src: string): void {
+  if (!src) return;
+  // Normalise the URL so https://... and //... both match
+  const normalised = src.replace(/^https?:/, '');
+  const already = Array.from(document.querySelectorAll('script[src]')).some(
+    (s) => (s as HTMLScriptElement).src.replace(/^https?:/, '') === normalised
+  );
+  if (already) return; // GPT / AdSense already on the page — don't re-add
+
+  const script = document.createElement('script');
+  script.src = src;
+  script.async = true;
+  document.head.appendChild(script);
+}
+
 export default function AdBlock({ placement, className }: AdBlockProps) {
   const [adCode, setAdCode] = useState<string | null>(null);
   const innerRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const isAdminPanel = location.pathname.startsWith('/admin');
 
-  // Fetch the ad code for this placement
+  // ── Fetch ad code for this placement ──────────────────────────
   useEffect(() => {
     if (isAdminPanel) return;
 
@@ -22,7 +41,7 @@ export default function AdBlock({ placement, className }: AdBlockProps) {
         .from('ads')
         .select('code')
         .eq('id', placement)
-        .maybeSingle(); // maybeSingle: returns null (not an error) if no row found
+        .maybeSingle();
 
       if (error) {
         console.error(`AdBlock [${placement}] fetch error:`, error.message);
@@ -35,26 +54,35 @@ export default function AdBlock({ placement, className }: AdBlockProps) {
     fetchAd();
   }, [placement, isAdminPanel]);
 
-  // Inject ad HTML/scripts into the inner div (NOT the root element)
-  // Using a separate inner div prevents React from losing the root node reference
+  // ── Inject ad HTML + scripts safely ───────────────────────────
   useEffect(() => {
     if (!adCode || !innerRef.current || isAdminPanel) return;
 
     const container = innerRef.current;
     container.innerHTML = adCode;
 
-    // innerHTML does not execute <script> tags — re-create them so they run
+    // Re-create <script> tags so they actually execute (innerHTML doesn't run them)
     const scripts = Array.from(container.querySelectorAll('script'));
-    scripts.forEach(oldScript => {
-      const newScript = document.createElement('script');
-      Array.from(oldScript.attributes).forEach(attr => {
-        newScript.setAttribute(attr.name, attr.value);
-      });
-      newScript.textContent = oldScript.textContent;
-      oldScript.parentNode?.replaceChild(newScript, oldScript);
+    scripts.forEach((oldScript) => {
+      const src = oldScript.getAttribute('src');
+
+      if (src) {
+        // External script (e.g. gpt.js, adsbygoogle.js):
+        // inject once into <head> so it is never loaded twice from cache
+        injectExternalScript(src);
+        oldScript.remove(); // remove the duplicate from the ad container
+      } else {
+        // Inline script: always re-create so it executes
+        const newScript = document.createElement('script');
+        Array.from(oldScript.attributes).forEach((attr) =>
+          newScript.setAttribute(attr.name, attr.value)
+        );
+        newScript.textContent = oldScript.textContent;
+        oldScript.parentNode?.replaceChild(newScript, oldScript);
+      }
     });
 
-    // Cleanup: destroy GPT slots on unmount to prevent duplicates
+    // Cleanup: destroy GPT ad slots on unmount to prevent ghost slots
     return () => {
       const googletag = (window as any).googletag;
       if (googletag?.apiReady) {
@@ -62,7 +90,9 @@ export default function AdBlock({ placement, className }: AdBlockProps) {
           const containerId = container.querySelector('[id^="div-gpt-ad"]')?.id;
           if (containerId) {
             const slots = googletag.pubads().getSlots();
-            const toDestroy = slots.filter((s: any) => s.getSlotElementId() === containerId);
+            const toDestroy = slots.filter(
+              (s: any) => s.getSlotElementId() === containerId
+            );
             if (toDestroy.length > 0) googletag.destroySlots(toDestroy);
           }
         });
