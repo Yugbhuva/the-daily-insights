@@ -104,8 +104,10 @@ export default function AdBlock({ placement, className }: AdBlockProps) {
   if (!adCode || isAdminPanel) return null;
 
   return (
-    <div className={`ad-block-${placement} ${className || ''}`}>
-      <div ref={innerRef} />
+    <div className={`ad-block-${placement} flex justify-center items-center w-full overflow-hidden ${className || ''}`}
+      style={{ textAlign: 'center' }}
+    >
+      <div ref={innerRef} style={{ display: 'inline-block', textAlign: 'center' }} />
     </div>
   );
 }
