@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 import imageCompression from 'browser-image-compression';
 import { Article } from '../types';
 import { useAuth } from '../context/AuthContext';
-import { Save, X, Image as ImageIcon, Tag, Layout, Upload, Loader2, Trash2, Zap, TrendingUp } from 'lucide-react';
+import { Save, X, Image as ImageIcon, Tag, Layout, Upload, Loader2, Trash2, Zap, TrendingUp, CheckCircle2, AlertCircle } from 'lucide-react';
 
 const categories = ['Politics', 'Business', 'Technology', 'Sports', 'Entertainment', 'Health', 'World'];
 
@@ -15,6 +15,7 @@ export default function AdminEditArticle() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(id ? true : false);
   const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [formData, setFormData] = useState<Partial<Article>>({
     title: '',
     content: '',
@@ -61,28 +62,23 @@ export default function AdminEditArticle() {
   }, [id]);
 
   const handleSaveArticle = async (targetStatus: 'draft' | 'published') => {
-    console.log('handleSaveArticle called with status:', targetStatus);
-    console.log('Current user:', user);
-    console.log('Current profile:', profile);
-
     if (!user) {
-      alert('You must be logged in to save articles.');
+      setSaveMessage({ type: 'error', text: 'You must be logged in to save articles.' });
       return;
     }
 
     if (!formData.title?.trim() || !formData.content?.trim() || !formData.excerpt?.trim()) {
-      alert('Title, excerpt, and content are required to save an article.');
+      setSaveMessage({ type: 'error', text: 'Title, excerpt, and content are all required.' });
       return;
     }
 
     setSaving(true);
-    console.log('Saving started, formData:', formData);
+    setSaveMessage(null);
 
     // Strip label columns that don't exist in the DB schema yet.
     // ⚠️ To save is_breaking / is_trending, run in Supabase SQL editor first:
     //   alter table public.articles add column if not exists is_breaking boolean default false;
     //   alter table public.articles add column if not exists is_trending boolean default false;
-    // Then replace `safeFormData` below with `formData` directly.
     const { is_breaking: _ib, is_trending: _it, ...safeFormData } = formData;
     const articleData = {
       ...safeFormData,
@@ -92,39 +88,25 @@ export default function AdminEditArticle() {
       updated_at: new Date().toISOString(),
     };
 
-    console.log('Article data to save:', articleData);
-
     try {
       if (id) {
-        console.log('Updating existing article with id:', id);
         const { error } = await supabase
           .from('articles')
           .update(articleData)
           .eq('id', id);
-        if (error) {
-          console.error('Supabase update error:', error);
-          throw new Error(error.message || JSON.stringify(error));
-        }
-        console.log('Update successful');
+        if (error) throw new Error(error.message);
       } else {
-        console.log('Inserting new article');
         const { error } = await supabase
           .from('articles')
           .insert([{ ...articleData, created_at: new Date().toISOString() }]);
-        if (error) {
-          console.error('Supabase insert error:', error);
-          throw new Error(error.message || JSON.stringify(error));
-        }
-        console.log('Insert successful');
+        if (error) throw new Error(error.message);
       }
 
-      alert(`Article saved as ${targetStatus}.`);
+      // Navigate immediately — no alert() blocking the thread
       navigate('/admin/articles');
     } catch (error: any) {
-      console.error('Error saving article:', error);
-      alert(`Failed to save article: ${error?.message || 'Unknown error. Check the browser console for details.'}`);
+      setSaveMessage({ type: 'error', text: error?.message || 'Unknown error. Check the browser console.' });
     } finally {
-      console.log('Saving finished, setting saving to false');
       setSaving(false);
     }
   };
@@ -513,6 +495,20 @@ export default function AdminEditArticle() {
               </div>
 
               <div className="pt-6 border-t border-zinc-100 dark:border-zinc-800 space-y-3">
+                {/* Inline save message — no alert() popups */}
+                {saveMessage && (
+                  <div className={`flex items-start gap-2 p-3 rounded-xl text-sm font-bold ${
+                    saveMessage.type === 'success'
+                      ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
+                      : 'bg-red-50 dark:bg-red-900/20 text-red-600'
+                  }`}>
+                    {saveMessage.type === 'success'
+                      ? <CheckCircle2 size={16} className="shrink-0 mt-0.5" />
+                      : <AlertCircle size={16} className="shrink-0 mt-0.5" />}
+                    <span>{saveMessage.text}</span>
+                  </div>
+                )}
+
                 <div className="flex gap-3">
                   <button 
                     type="button"
@@ -520,6 +516,7 @@ export default function AdminEditArticle() {
                     disabled={saving}
                     className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-zinc-200 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-100 font-black rounded-xl hover:bg-zinc-300 dark:hover:bg-zinc-600 disabled:opacity-50"
                   >
+                    {saving ? <Loader2 size={16} className="animate-spin" /> : null}
                     {saving ? 'Saving...' : 'Save Draft'}
                   </button>
                   <button 
@@ -528,6 +525,7 @@ export default function AdminEditArticle() {
                     disabled={saving}
                     className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-red-600 text-white font-black rounded-xl hover:bg-red-700 disabled:opacity-50"
                   >
+                    {saving ? <Loader2 size={16} className="animate-spin" /> : null}
                     {saving ? 'Saving...' : 'Publish'}
                   </button>
                 </div>
@@ -540,6 +538,7 @@ export default function AdminEditArticle() {
                   <X size={20} /> Cancel
                 </button>
               </div>
+
             </div>
           </div>
 
