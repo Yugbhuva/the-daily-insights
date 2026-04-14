@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { AdConfig } from '../types';
 import AdminLayout from '../components/AdminLayout';
-import { Save, Trash2, Edit2, Plus, AlertCircle, CheckCircle2, RefreshCw } from 'lucide-react';
+import { Save, Trash2, Plus, AlertCircle, CheckCircle2, RefreshCw } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const PLACEMENTS = [
@@ -23,8 +23,6 @@ export default function AdminAds() {
   const [ads, setAds] = useState<AdConfig[]>([]);
   const [selectedPlacement, setSelectedPlacement] = useState(PLACEMENTS[0].id);
   const [adCode, setAdCode] = useState('');
-  const [editingId, setEditingId] = useState<string | null>(null);
-
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -89,7 +87,6 @@ export default function AdminAds() {
 
       setMessage({ type: 'success', text: `Ad block "${PLACEMENTS.find(p => p.id === selectedPlacement)?.label}" saved!` });
       setAdCode('');
-      setEditingId(null);
       setSelectedPlacement(PLACEMENTS[0].id);
       fetchAds();
     } catch (err: any) {
@@ -115,33 +112,12 @@ export default function AdminAds() {
       const { error } = await supabase.from('ads').delete().eq('id', id);
       if (error) throw error;
       setAds(prev => prev.filter(a => a.id !== id));
-      if (editingId === id) {
-        setEditingId(null);
-        setAdCode('');
-        setSelectedPlacement(PLACEMENTS[0].id);
-      }
     } catch (err: any) {
       console.error('handleDelete error:', err);
       setMessage({ type: 'error', text: `Failed to delete: ${err?.message || 'Unknown error'}` });
     } finally {
       setDeletingId(null);
     }
-  };
-
-  // ─── Edit ────────────────────────────────────────────────────
-  const handleEdit = (ad: AdConfig) => {
-    setEditingId(ad.id);
-    setSelectedPlacement(ad.id);
-    setAdCode(ad.code);
-    setMessage(null);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleCancelEdit = () => {
-    setEditingId(null);
-    setAdCode('');
-    setSelectedPlacement(PLACEMENTS[0].id);
-    setMessage(null);
   };
 
   // ─── UI ──────────────────────────────────────────────────────
@@ -152,8 +128,7 @@ export default function AdminAds() {
         {/* ── Add / Edit Form ── */}
         <section className="bg-white dark:bg-zinc-900 p-8 rounded-2xl border border-zinc-100 dark:border-zinc-800 shadow-sm">
           <h2 className="text-xl font-black mb-6 flex items-center gap-2">
-            {editingId ? <Edit2 className="text-blue-500" /> : <Plus className="text-red-600" />}
-            {editingId ? 'Edit Ad Block' : 'Add New Ad Block'}
+            <Plus className="text-red-600" /> Add New Ad Block
           </h2>
 
           <form onSubmit={handleSave} className="space-y-6">
@@ -165,16 +140,12 @@ export default function AdminAds() {
               <select
                 value={selectedPlacement}
                 onChange={(e) => setSelectedPlacement(e.target.value)}
-                disabled={!!editingId}
-                className="w-full bg-zinc-50 dark:bg-zinc-800 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-red-600 outline-none disabled:opacity-60"
+                className="w-full bg-zinc-50 dark:bg-zinc-800 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-red-600 outline-none"
               >
                 {PLACEMENTS.map(p => (
                   <option key={p.id} value={p.id}>{p.label}</option>
                 ))}
               </select>
-              {editingId && (
-                <p className="mt-1 text-xs text-zinc-500">Placement is locked while editing. Cancel to choose a different slot.</p>
-              )}
             </div>
 
             {/* Ad code textarea */}
@@ -206,25 +177,14 @@ export default function AdminAds() {
             )}
 
             {/* Buttons */}
-            <div className="flex gap-3">
-              <button
-                type="submit"
-                disabled={saving || !adCode.trim()}
-                className="flex-1 flex items-center justify-center gap-2 py-4 bg-red-600 text-white font-black rounded-xl hover:bg-red-700 transition-all disabled:opacity-50 shadow-lg shadow-red-600/20"
-              >
-                <Save size={20} />
-                {saving ? 'Saving...' : editingId ? 'Update Ad Block' : 'Save Ad Block'}
-              </button>
-              {editingId && (
-                <button
-                  type="button"
-                  onClick={handleCancelEdit}
-                  className="px-6 py-4 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 font-black rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all"
-                >
-                  Cancel
-                </button>
-              )}
-            </div>
+            <button
+              type="submit"
+              disabled={saving || !adCode.trim()}
+              className="w-full flex items-center justify-center gap-2 py-4 bg-red-600 text-white font-black rounded-xl hover:bg-red-700 transition-all disabled:opacity-50 shadow-lg shadow-red-600/20"
+            >
+              <Save size={20} />
+              {saving ? 'Saving...' : 'Save Ad Block'}
+            </button>
           </form>
         </section>
 
@@ -268,28 +228,16 @@ export default function AdminAds() {
             <div className="space-y-3">
               {ads.map(ad => {
                 const placement = PLACEMENTS.find(p => p.id === ad.id);
-                const isEditing = editingId === ad.id;
                 return (
                   <div
                     key={ad.id}
-                    className={`p-4 rounded-xl border transition-all ${
-                      isEditing
-                        ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/10'
-                        : 'border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-600'
-                    }`}
+                    className="p-4 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-600 transition-all"
                   >
                     <div className="flex items-center justify-between gap-4">
                       <div className="min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="font-black text-zinc-900 dark:text-white text-sm">
-                            {placement?.label || ad.id}
-                          </h3>
-                          {isEditing && (
-                            <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 bg-blue-500 text-white rounded-full">
-                              Editing
-                            </span>
-                          )}
-                        </div>
+                        <h3 className="font-black text-zinc-900 dark:text-white text-sm">
+                          {placement?.label || ad.id}
+                        </h3>
                         <p className="text-xs text-zinc-400 font-mono truncate max-w-[400px] mt-1">
                           {ad.code.substring(0, 80)}{ad.code.length > 80 ? '…' : ''}
                         </p>
@@ -297,24 +245,14 @@ export default function AdminAds() {
                           Updated: {new Date(ad.updated_at).toLocaleString()}
                         </p>
                       </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <button
-                          onClick={() => handleEdit(ad)}
-                          disabled={isEditing}
-                          className="p-2 text-zinc-400 hover:text-blue-600 transition-colors disabled:opacity-40"
-                          title="Edit"
-                        >
-                          <Edit2 size={16} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(ad.id)}
-                          disabled={deletingId === ad.id}
-                          className="p-2 text-zinc-400 hover:text-red-600 transition-colors disabled:opacity-40"
-                          title="Delete"
-                        >
-                          <Trash2 size={16} className={deletingId === ad.id ? 'animate-pulse' : ''} />
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => handleDelete(ad.id)}
+                        disabled={deletingId === ad.id}
+                        className="p-2 text-zinc-400 hover:text-red-600 transition-colors disabled:opacity-40 shrink-0"
+                        title="Delete"
+                      >
+                        <Trash2 size={16} className={deletingId === ad.id ? 'animate-pulse' : ''} />
+                      </button>
                     </div>
                   </div>
                 );

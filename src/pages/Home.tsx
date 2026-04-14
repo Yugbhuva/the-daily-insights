@@ -11,7 +11,6 @@ import SEO from '../components/SEO';
 
 
 export default function Home() {
-  console.log('Home component rendering...');
   const { loading: authLoading } = useAuth();
   const [featuredArticle, setFeaturedArticle] = useState<Article | null>(null);
   const [latestArticles, setLatestArticles] = useState<Article[]>([]);
@@ -79,28 +78,21 @@ export default function Home() {
   };
 
   useEffect(() => {
-    if (!authLoading) {
-      fetchArticles();
-    }
-  }, [authLoading]);
+    // Fetch articles immediately — no need to wait for auth (articles are public)
+    fetchArticles();
 
-  useEffect(() => {
-    // Set up real-time subscription
+    // Real-time updates
     const channel = supabase
       .channel('public:articles')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'articles' }, () => {
-        fetchArticles();
-      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'articles' }, fetchArticles)
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
 
 
-  if (loading || authLoading) {
+  if (loading) {
     return (
       <div className="container mx-auto px-4 py-20 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600"></div>

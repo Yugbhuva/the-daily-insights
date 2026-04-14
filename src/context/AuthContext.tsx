@@ -54,8 +54,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     });
 
-    // Listen for changes on auth state (logged in, signed out, etc.)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    // Listen for auth state changes (sign in, sign out, token refresh)
+    // Skip INITIAL_SESSION — getSession() above already handles it to avoid double-firing
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'INITIAL_SESSION') return;
+
       const currentUser = session?.user ?? null;
       setUser(currentUser);
       
